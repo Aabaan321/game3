@@ -1,256 +1,102 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cyber Runner 3D</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <title>Cyber Runner</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        :root {
-            --primary: #00fff2;
-            --secondary: #ff0055;
-            --accent: #ffd700;
-            --background: #0a0a2a;
-        }
-
         body {
+            margin: 0;
             display: flex;
-            flex-direction: column;
-            align-items: center;
             justify-content: center;
+            align-items: center;
             min-height: 100vh;
-            background: var(--background);
-            font-family: 'Orbitron', sans-serif;
-            overflow: hidden;
-            perspective: 1000px;
-        }
-
-        #gameContainer {
-            position: relative;
-            width: 1000px;
-            height: 700px;
-            transform-style: preserve-3d;
+            background: #111;
+            font-family: Arial, sans-serif;
         }
 
         #gameArea {
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(0deg, rgba(0,0,0,0.9) 0%, rgba(10,10,42,0.9) 100%);
+            width: 800px;
+            height: 600px;
+            background: #000;
             position: relative;
             overflow: hidden;
-            border: 4px solid var(--primary);
-            border-radius: 15px;
-            box-shadow: 0 0 50px rgba(0, 255, 242, 0.3);
-            transform-style: preserve-3d;
-        }
-
-        .game-floor {
-            position: absolute;
-            bottom: 0;
-            width: 100%;
-            height: 300px;
-            background: linear-gradient(0deg, var(--background) 0%, transparent 100%);
-            transform: rotateX(60deg);
-            transform-style: preserve-3d;
-        }
-
-        .lane-marker {
-            position: absolute;
-            bottom: 0;
-            width: 100%;
-            height: 500px;
-            display: flex;
-            justify-content: space-around;
-            transform: rotateX(60deg);
-        }
-
-        .lane {
-            width: 4px;
-            height: 100%;
-            background: linear-gradient(0deg, var(--primary) 0%, transparent 100%);
-            box-shadow: 0 0 10px var(--primary);
+            border: 4px solid #0ff;
+            box-shadow: 0 0 20px #0ff;
         }
 
         #player {
-            width: 60px;
-            height: 80px;
+            width: 50px;
+            height: 70px;
+            background: #0ff;
             position: absolute;
-            bottom: 100px;
-            left: 470px;
-            transform-style: preserve-3d;
-            transition: left 0.15s cubic-bezier(0.4, 0.0, 0.2, 1);
-        }
-
-        .player-model {
-            width: 100%;
-            height: 100%;
-            position: relative;
-            transform-style: preserve-3d;
-            animation: playerHover 1s infinite ease-in-out;
-        }
-
-        .player-face {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, var(--primary) 0%, #0051ff 100%);
-            border: 2px solid rgba(255, 255, 255, 0.5);
-            box-shadow: 0 0 20px var(--primary);
-            transform-style: preserve-3d;
-            transition: all 0.3s ease;
-        }
-
-        .face-front { transform: translateZ(30px); }
-        .face-back { transform: translateZ(-30px); }
-        .face-left { transform: rotateY(-90deg) translateZ(30px); }
-        .face-right { transform: rotateY(90deg) translateZ(30px); }
-        .face-top { transform: rotateX(90deg) translateZ(30px); }
-        .face-bottom { transform: rotateX(-90deg) translateZ(30px); }
-
-        .player-shadow {
-            position: absolute;
-            bottom: -90px;
-            left: 0;
-            width: 100%;
-            height: 20px;
-            background: rgba(0, 255, 242, 0.3);
-            border-radius: 50%;
-            transform: rotateX(60deg) scale(1.5, 1);
-            filter: blur(5px);
-            animation: shadowPulse 1s infinite ease-in-out;
-        }
-
-        .player-trail {
-            position: absolute;
-            bottom: -20px;
-            left: 0;
-            width: 100%;
-            height: 100px;
-            background: linear-gradient(0deg, transparent, var(--primary));
-            opacity: 0.3;
-            transform-origin: top;
-            transform: rotateX(60deg);
-        }
-
-        .hud {
-            position: absolute;
-            color: var(--primary);
-            text-shadow: 0 0 10px var(--primary);
-            font-size: 24px;
-            z-index: 100;
-            padding: 20px;
-            background: rgba(0, 0, 0, 0.5);
-            border-radius: 10px;
-            border: 2px solid var(--primary);
-            backdrop-filter: blur(5px);
-        }
-
-        #score { top: 20px; left: 20px; }
-        #highScore { top: 20px; right: 20px; }
-        #multiplier { top: 80px; left: 20px; }
-        #powerUpIndicator { 
-            top: 140px; 
-            left: 20px;
-            opacity: 0;
-            transition: opacity 0.3s;
-            color: #00ff87;
-        }
-
-        .game-object {
-            position: absolute;
-            transform-style: preserve-3d;
+            bottom: 50px;
+            left: 375px;
+            border-radius: 5px;
+            transition: left 0.1s;
+            box-shadow: 0 0 15px #0ff;
         }
 
         .obstacle {
             width: 50px;
             height: 50px;
-            transform-style: preserve-3d;
-        }
-
-        .obstacle-face {
+            background: #f00;
             position: absolute;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, var(--secondary) 0%, #ff5555 100%);
-            border: 2px solid rgba(255, 255, 255, 0.5);
-            box-shadow: 0 0 20px var(--secondary);
+            border-radius: 5px;
+            box-shadow: 0 0 15px #f00;
         }
 
         .coin {
-            width: 40px;
-            height: 40px;
-            animation: coinRotate 2s infinite linear;
-        }
-
-        .coin-face {
+            width: 30px;
+            height: 30px;
+            background: #ff0;
             position: absolute;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, var(--accent) 0%, #ffa500 100%);
-            border: 2px solid rgba(255, 255, 255, 0.5);
             border-radius: 50%;
-            box-shadow: 0 0 20px var(--accent);
+            box-shadow: 0 0 15px #ff0;
+            animation: coinSpin 1s infinite linear;
         }
 
         .power-up {
-            width: 45px;
-            height: 45px;
-            animation: powerUpFloat 2s infinite ease-in-out;
+            width: 40px;
+            height: 40px;
+            background: #0f0;
+            position: absolute;
+            border-radius: 10px;
+            box-shadow: 0 0 15px #0f0;
+            animation: powerUpFloat 1s infinite ease-in-out;
         }
 
-        .power-up-face {
+        .score {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #fff;
+            font-size: 24px;
+            z-index: 100;
+        }
+
+        #startScreen {
             position: absolute;
             width: 100%;
             height: 100%;
-            background: linear-gradient(135deg, #00ff87 0%, #60efff 100%);
-            border: 2px solid rgba(255, 255, 255, 0.5);
-            border-radius: 10px;
-            box-shadow: 0 0 30px #00ff87;
+            background: rgba(0,0,0,0.9);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            z-index: 1000;
         }
 
-               /* Animations */
-        @keyframes playerHover {
-            0%, 100% { transform: translateY(0) rotateX(-15deg); }
-            50% { transform: translateY(-15px) rotateX(-5deg); }
+        #startScreen h1 {
+            color: #0ff;
+            font-size: 48px;
+            margin-bottom: 30px;
+            text-shadow: 0 0 10px #0ff;
         }
 
-        @keyframes shadowPulse {
-            0%, 100% { transform: rotateX(60deg) scale(1.5, 1); opacity: 0.3; }
-            50% { transform: rotateX(60deg) scale(1.2, 0.8); opacity: 0.2; }
-        }
-
-        @keyframes coinRotate {
-            0% { transform: rotateY(0deg); }
-            100% { transform: rotateY(360deg); }
-        }
-
-        @keyframes powerUpFloat {
-            0%, 100% { transform: translateY(0) scale(1); }
-            50% { transform: translateY(-10px) scale(1.1); }
-        }
-
-        .particle {
-            position: absolute;
-            pointer-events: none;
-            z-index: 100;
-            transform-style: preserve-3d;
-        }
-
-        @keyframes particle {
-            0% { 
-                transform: scale(1) translate3d(0, 0, 0); 
-                opacity: 1; 
-            }
-            100% { 
-                transform: scale(0) translate3d(var(--tx), var(--ty), var(--tz)); 
-                opacity: 0; 
-            }
+        #startScreen p {
+            margin: 10px;
+            font-size: 20px;
+            color: #fff;
         }
 
         #gameOver {
@@ -260,476 +106,168 @@
             left: 50%;
             transform: translate(-50%, -50%);
             text-align: center;
-            z-index: 1000;
-            background: rgba(0, 0, 0, 0.9);
-            padding: 40px;
-            border-radius: 20px;
-            border: 3px solid var(--secondary);
-            box-shadow: 0 0 50px var(--secondary);
-        }
-
-        #gameOver h1 {
-            font-size: 60px;
-            color: var(--secondary);
-            text-shadow: 0 0 20px var(--secondary);
-            margin-bottom: 20px;
-        }
-
-        #gameOver p {
-            font-size: 24px;
-            color: var(--primary);
-            margin: 10px 0;
-        }
-
-        #startScreen {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            background: rgba(0, 0, 0, 0.9);
+            color: #f00;
+            font-size: 48px;
             z-index: 1000;
         }
 
-        #startScreen h1 {
-            font-size: 72px;
-            color: var(--primary);
-            text-shadow: 0 0 30px var(--primary);
-            margin-bottom: 40px;
-            animation: titlePulse 2s infinite ease-in-out;
+        @keyframes coinSpin {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
         }
 
-        @keyframes titlePulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); }
+        @keyframes powerUpFloat {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
         }
 
-        #startScreen p {
-            font-size: 24px;
-            color: #fff;
-            margin: 10px 0;
-            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
-        }
-
-        .combo-text {
+        .lane {
             position: absolute;
-            color: var(--accent);
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: rgba(255,255,255,0.2);
+        }
+
+        button {
+            padding: 15px 30px;
             font-size: 24px;
-            text-shadow: 0 0 10px var(--accent);
-            pointer-events: none;
-            animation: comboFloat 1s forwards ease-out;
+            background: #0ff;
+            border: none;
+            border-radius: 5px;
+            color: #000;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: all 0.3s;
         }
 
-        @keyframes comboFloat {
-            0% { transform: translateY(0) scale(1); opacity: 1; }
-            100% { transform: translateY(-100px) scale(1.5); opacity: 0; }
-        }
-
-        .flash {
-            animation: flash 0.1s;
-        }
-
-        @keyframes flash {
-            0% { filter: brightness(100%); }
-            50% { filter: brightness(200%); }
-            100% { filter: brightness(100%); }
-        }
-
-        .bonus-multiplier {
-            position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            color: var(--accent);
-            font-size: 36px;
-            text-shadow: 0 0 15px var(--accent);
-            z-index: 100;
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
-
-        /* Responsive Design */
-        @media (max-width: 1024px) {
-            #gameContainer {
-                width: 100%;
-                height: 80vh;
-            }
+        button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 20px #0ff;
         }
     </style>
 </head>
 <body>
-    <div id="gameContainer">
-        <div class="hud" id="score">Score: 0</div>
-        <div class="hud" id="highScore">High Score: 0</div>
-        <div class="hud" id="multiplier">Multiplier: x1</div>
-        <div class="hud" id="powerUpIndicator">SHIELD ACTIVE!</div>
+    <div id="gameArea">
+        <div class="lane" style="left: 266px;"></div>
+        <div class="lane" style="left: 532px;"></div>
+        <div id="player"></div>
+        <div class="score">Score: <span id="scoreValue">0</span></div>
         
-        <div id="gameArea">
-            <div class="game-floor"></div>
-            <div class="lane-marker">
-                <div class="lane"></div>
-                <div class="lane"></div>
-                <div class="lane"></div>
-            </div>
-            
-            <div id="player">
-                <div class="player-model">
-                    <div class="player-face face-front"></div>
-                    <div class="player-face face-back"></div>
-                    <div class="player-face face-left"></div>
-                    <div class="player-face face-right"></div>
-                    <div class="player-face face-top"></div>
-                    <div class="player-face face-bottom"></div>
-                    <div class="player-shadow"></div>
-                    <div class="player-trail"></div>
-                </div>
-            </div>
-
-            <div class="bonus-multiplier">PERFECT!</div>
-
-            <div id="gameOver">
-                <h1>GAME OVER</h1>
-                <p>Final Score: <span id="finalScore">0</span></p>
-                <p>High Score: <span id="finalHighScore">0</span></p>
-                <p>Press R to Restart</p>
-            </div>
-
-            <div id="startScreen">
-                <h1>CYBER RUNNER</h1>
-                <p>← → to move between lanes</p>
-                <p>Collect coins for bonus points</p>
-                <p>Grab power-ups for shields</p>
-                <p>Press SPACE to start</p>
-            </div>
+        <div id="startScreen">
+            <h1>CYBER RUNNER</h1>
+            <p>Use LEFT and RIGHT arrows to move</p>
+            <p>Collect yellow coins for points</p>
+            <p>Avoid red obstacles</p>
+            <p>Get green power-ups for shields</p>
+            <button onclick="startGame()">START GAME</button>
+        </div>
+        
+        <div id="gameOver">
+            GAME OVER
+            <p style="font-size: 24px">Press R to restart</p>
         </div>
     </div>
 
     <script>
-       // Game Settings and State
-const GAME_STATE = {
-    score: 0,
-    highScore: 0,
-    currentLane: 1,
-    gameSpeed: 5,
-    isGameOver: false,
-    isPlaying: false,
-    hasShield: false,
-    multiplier: 1,
-    combo: 0,
-    lanes: [250, 500, 750],
-    lastCoinCollected: 0
-};
+        const gameArea = document.getElementById('gameArea');
+        const player = document.getElementById('player');
+        const scoreValue = document.getElementById('scoreValue');
+        const startScreen = document.getElementById('startScreen');
+        const gameOverScreen = document.getElementById('gameOver');
 
-// Audio Context Setup
-let audioContext;
-let masterGain;
+        let score = 0;
+        let currentLane = 1;
+        let isGameOver = false;
+        let gameSpeed = 5;
+        const lanes = [266, 375, 484];
 
-function initAudio() {
-    audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    masterGain = audioContext.createGain();
-    masterGain.connect(audioContext.destination);
-}
-
-// Sound Effects
-function playSound(frequency, type = 'sine', duration = 0.1) {
-    if (!audioContext) initAudio();
-    
-    const oscillator = audioContext.createOscillator();
-    const gainNode = audioContext.createGain();
-    
-    oscillator.type = type;
-    oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
-    
-    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
-    
-    oscillator.connect(gainNode);
-    gainNode.connect(masterGain);
-    
-    oscillator.start();
-    oscillator.stop(audioContext.currentTime + duration);
-}
-
-// Advanced Particle System
-class ParticleSystem {
-    static createParticle(x, y, color, size = 10) {
-        const particle = document.createElement('div');
-        particle.className = 'particle';
-        particle.style.left = x + 'px';
-        particle.style.top = y + 'px';
-        particle.style.width = size + 'px';
-        particle.style.height = size + 'px';
-        particle.style.background = color;
-        particle.style.borderRadius = '50%';
-        particle.style.boxShadow = `0 0 ${size}px ${color}`;
-        
-        const angle = Math.random() * Math.PI * 2;
-        const speed = Math.random() * 200 + 100;
-        const tx = Math.cos(angle) * speed;
-        const ty = Math.sin(angle) * speed;
-        const tz = Math.random() * 100 - 50;
-        
-        particle.style.setProperty('--tx', tx + 'px');
-        particle.style.setProperty('--ty', ty + 'px');
-        particle.style.setProperty('--tz', tz + 'px');
-        particle.style.animation = 'particle 0.8s cubic-bezier(0.4, 0.0, 0.2, 1) forwards';
-        
-        gameArea.appendChild(particle);
-        setTimeout(() => particle.remove(), 800);
-    }
-
-    static burst(x, y, color, count = 15) {
-        for(let i = 0; i < count; i++) {
-            this.createParticle(x, y, color, Math.random() * 10 + 5);
+        function startGame() {
+            startScreen.style.display = 'none';
+            isGameOver = false;
+            score = 0;
+            scoreValue.textContent = score;
+            gameSpeed = 5;
+            
+            // Clear any existing objects
+            document.querySelectorAll('.obstacle, .coin, .power-up').forEach(el => el.remove());
+            
+            // Start spawning objects
+            spawnObjects();
         }
-    }
-}
 
-// Game Object Factory
-class GameObject {
-    static create(type) {
-        const element = document.createElement('div');
-        element.className = `game-object ${type}`;
-        
-        switch(type) {
-            case 'obstacle':
-                for(let i = 0; i < 6; i++) {
-                    const face = document.createElement('div');
-                    face.className = 'obstacle-face';
-                    element.appendChild(face);
+        function spawnObjects() {
+            if (!isGameOver) {
+                if (Math.random() < 0.7) { // 70% chance for obstacle
+                    createObject('obstacle');
+                } else if (Math.random() < 0.8) { // 24% chance for coin
+                    createObject('coin');
+                } else { // 6% chance for power-up
+                    createObject('power-up');
                 }
-                break;
-            case 'coin':
-                const coinFace = document.createElement('div');
-                coinFace.className = 'coin-face';
-                element.appendChild(coinFace);
-                break;
-            case 'power-up':
-                const powerUpFace = document.createElement('div');
-                powerUpFace.className = 'power-up-face';
-                element.appendChild(powerUpFace);
-                break;
+                setTimeout(spawnObjects, 1000);
+            }
         }
-        
-        return element;
-    }
-}
 
-// Combo System
-function updateCombo(x, y) {
-    GAME_STATE.combo++;
-    GAME_STATE.multiplier = Math.min(8, 1 + Math.floor(GAME_STATE.combo / 5));
-    document.getElementById('multiplier').textContent = `Multiplier: x${GAME_STATE.multiplier}`;
-    
-    const comboText = document.createElement('div');
-    comboText.className = 'combo-text';
-    comboText.style.left = x + 'px';
-    comboText.style.top = y + 'px';
-    comboText.textContent = `${GAME_STATE.combo} COMBO!`;
-    gameArea.appendChild(comboText);
-    
-    setTimeout(() => comboText.remove(), 1000);
-}
+        function createObject(type) {
+            const object = document.createElement('div');
+            object.className = type;
+            const lane = Math.floor(Math.random() * 3);
+            object.style.left = (lanes[lane] - 25) + 'px';
+            object.style.top = '-50px';
+            gameArea.appendChild(object);
 
-function resetCombo() {
-    GAME_STATE.combo = 0;
-    GAME_STATE.multiplier = 1;
-    document.getElementById('multiplier').textContent = 'Multiplier: x1';
-}
-
-// Game Object Creation and Management
-function createGameObject(type) {
-    if (GAME_STATE.isGameOver || !GAME_STATE.isPlaying) return;
-    
-    const element = GameObject.create(type);
-    const lane = Math.floor(Math.random() * 3);
-    element.style.left = (GAME_STATE.lanes[lane] - element.clientWidth/2) + 'px';
-    element.style.top = '-100px';
-    gameArea.appendChild(element);
-    
-    let pos = -100;
-    let rotation = 0;
-    
-    const moveInterval = setInterval(() => {
-        if (GAME_STATE.isGameOver) {
-            clearInterval(moveInterval);
-            return;
-        }
-        
-        pos += GAME_STATE.gameSpeed;
-        rotation += 5;
-        element.style.top = pos + 'px';
-        element.style.transform = `rotateY(${rotation}deg)`;
-        
-        // Collision detection
-        if (pos >= 500 && pos <= 600 && lane === GAME_STATE.currentLane) {
-            switch(type) {
-                case 'obstacle':
-                    if (!GAME_STATE.hasShield) {
-                        gameOver();
-                        ParticleSystem.burst(parseFloat(element.style.left), pos, '#ff0055', 30);
-                        playSound(100, 'sawtooth', 0.3);
+            const moveInterval = setInterval(() => {
+                const top = parseInt(object.style.top);
+                if (top > 600) {
+                    object.remove();
+                    clearInterval(moveInterval);
+                    if (type === 'obstacle') {
+                        score++;
+                        scoreValue.textContent = score;
                     }
-                    element.remove();
-                    clearInterval(moveInterval);
-                    break;
+                } else {
+                    object.style.top = (top + gameSpeed) + 'px';
                     
-                case 'coin':
-                    collectCoin(element, pos);
-                    clearInterval(moveInterval);
-                    break;
-                    
-                case 'power-up':
-                    activateShield(element);
-                    clearInterval(moveInterval);
-                    break;
-            }
+                    // Collision detection
+                    if (top > 430 && top < 520 && lane === currentLane) {
+                        if (type === 'obstacle') {
+                            gameOver();
+                            object.remove();
+                            clearInterval(moveInterval);
+                        } else if (type === 'coin') {
+                            score += 5;
+                            scoreValue.textContent = score;
+                            object.remove();
+                            clearInterval(moveInterval);
+                        }
+                    }
+                }
+            }, 16);
         }
-        
-        if (pos > 700) {
-            element.remove();
-            clearInterval(moveInterval);
-            if (type === 'coin') resetCombo();
-            if (type === 'obstacle') {
-                GAME_STATE.score += GAME_STATE.multiplier;
-                updateScore();
-                increaseSpeed();
-            }
+
+        function gameOver() {
+            isGameOver = true;
+            gameOverScreen.style.display = 'block';
         }
-    }, 16);
-}
 
-function collectCoin(coin, yPos) {
-    const now = Date.now();
-    if (now - GAME_STATE.lastCoinCollected < 1000) {
-        updateCombo(parseFloat(coin.style.left), yPos);
-    } else {
-        resetCombo();
-    }
-    GAME_STATE.lastCoinCollected = now;
-    
-    GAME_STATE.score += 5 * GAME_STATE.multiplier;
-    updateScore();
-    ParticleSystem.burst(parseFloat(coin.style.left), yPos, '#ffd700', 20);
-    playSound(800, 'sine', 0.1);
-    coin.remove();
-    
-    const perfect = document.querySelector('.bonus-multiplier');
-    perfect.style.opacity = '1';
-    setTimeout(() => perfect.style.opacity = '0', 500);
-}
-
-function activateShield(powerUp) {
-    GAME_STATE.hasShield = true;
-    powerUp.remove();
-    powerUpIndicator.style.opacity = '1';
-    document.querySelector('.player-model').style.boxShadow = '0 0 30px #00ff87';
-    playSound(600, 'sine', 0.2);
-    
-    setTimeout(() => {
-        GAME_STATE.hasShield = false;
-        powerUpIndicator.style.opacity = '0';
-        document.querySelector('.player-model').style.boxShadow = 'none';
-    }, 5000);
-}
-
-// Game Control Functions
-function startGame() {
-    if (!audioContext) initAudio();
-    
-    GAME_STATE.isPlaying = true;
-    GAME_STATE.isGameOver = false;
-    GAME_STATE.score = 0;
-    GAME_STATE.gameSpeed = 5;
-    GAME_STATE.currentLane = 1;
-    GAME_STATE.hasShield = false;
-    GAME_STATE.multiplier = 1;
-    GAME_STATE.combo = 0;
-    
-    updateScore();
-    document.getElementById('gameOver').style.display = 'none';
-    document.getElementById('startScreen').style.display = 'none';
-    document.querySelector('.player-model').style.left = GAME_STATE.lanes[GAME_STATE.currentLane] - 30 + 'px';
-    
-    // Clear existing objects
-    document.querySelectorAll('.game-object').forEach(el => el.remove());
-}
-
-function gameOver() {
-    GAME_STATE.isGameOver = true;
-    document.getElementById('gameOver').style.display = 'block';
-    document.getElementById('finalScore').textContent = GAME_STATE.score;
-    document.getElementById('finalHighScore').textContent = GAME_STATE.highScore;
-    
-    if (GAME_STATE.score > GAME_STATE.highScore) {
-        GAME_STATE.highScore = GAME_STATE.score;
-        document.getElementById('highScore').textContent = `High Score: ${GAME_STATE.highScore}`;
-    }
-}
-
-// Event Listeners
-document.addEventListener('keydown', (e) => {
-    if (!GAME_STATE.isPlaying && e.code === 'Space') {
-        startGame();
-        return;
-    }
-    
-    if (!GAME_STATE.isGameOver && GAME_STATE.isPlaying) {
-        if (e.key === 'ArrowLeft' && GAME_STATE.currentLane > 0) {
-            GAME_STATE.currentLane--;
-            document.querySelector('#player').style.left = 
-                (GAME_STATE.lanes[GAME_STATE.currentLane] - 30) + 'px';
-            playSound(400, 'sine', 0.1);
-        }
-        if (e.key === 'ArrowRight' && GAME_STATE.currentLane < 2) {
-            GAME_STATE.currentLane++;
-            document.querySelector('#player').style.left = 
-                (GAME_STATE.lanes[GAME_STATE.currentLane] - 30) + 'px';
-            playSound(500, 'sine', 0.1);
-        }
-    }
-    
-    if (e.key === 'r' && GAME_STATE.isGameOver) {
-        startGame();
-    }
-});
-
-// Initialize game
-setInterval(() => createGameObject('obstacle'), 1200);
-setInterval(() => createGameObject('coin'), 2000);
-setInterval(() => createGameObject('power-up'), 10000);
-
-// Create speed lines
-function createSpeedLines() {
-    for(let i = 0; i < 50; i++) {
-        const line = document.createElement('div');
-        line.className = 'speed-line';
-        resetSpeedLine(line);
-        gameArea.appendChild(line);
-        
-        setInterval(() => {
-            if (GAME_STATE.isPlaying && !GAME_STATE.isGameOver) {
-                line.style.top = parseFloat(line.style.top) + GAME_STATE.gameSpeed * 2 + 'px';
-                if (parseFloat(line.style.top) > 700) {
-                    resetSpeedLine(line);
+        document.addEventListener('keydown', (e) => {
+            if (!isGameOver) {
+                if (e.key === 'ArrowLeft' && currentLane > 0) {
+                    currentLane--;
+                    player.style.left = lanes[currentLane] + 'px';
+                }
+                if (e.key === 'ArrowRight' && currentLane < 2) {
+                    currentLane++;
+                    player.style.left = lanes[currentLane] + 'px';
                 }
             }
-        }, 16);
-    }
-}
-
-function resetSpeedLine(line) {
-    line.style.left = Math.random() * 1000 + 'px';
-    line.style.top = '-100px';
-    line.style.height = Math.random() * 100 + 50 + 'px';
-    line.style.opacity = Math.random() * 0.5 + 0.1;
-}
-
-createSpeedLines();
-
+            if (e.key === 'r' && isGameOver) {
+                gameOverScreen.style.display = 'none';
+                startGame();
+            }
+        });
     </script>
 </body>
 </html>
-
