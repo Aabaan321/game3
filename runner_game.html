@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Fast Runner Game</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: #1a1a1a;
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        #gameArea {
+            width: 600px;
+            height: 500px;
+            border: 3px solid #333;
+            position: relative;
+            background: #000;
+            overflow: hidden;
+            margin: 20px auto;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+        
+        #player {
+            width: 40px;
+            height: 50px;
+            background: #00ff00;
+            position: absolute;
+            bottom: 20px;
+            left: 280px;
+            border-radius: 5px;
+            transition: left 0.1s ease;
+            box-shadow: 0 0 10px #00ff00;
+        }
+        
+        .obstacle {
+            width: 40px;
+            height: 40px;
+            background: #ff3333;
+            position: absolute;
+            top: -40px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px #ff3333;
+        }
+        
+        .lane {
+            width: 2px;
+            height: 500px;
+            background: #333;
+            position: absolute;
+            top: 0;
+        }
+        
+        #score {
+            color: #fff;
+            text-align: center;
+            font-size: 30px;
+            margin: 10px;
+            text-shadow: 0 0 10px #00ff00;
+        }
+        
+        #gameOver {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 40px;
+            color: #ff3333;
+            text-align: center;
+            text-shadow: 0 0 10px #ff3333;
+            background: rgba(0,0,0,0.8);
+            padding: 20px;
+            border-radius: 10px;
+            z-index: 100;
+        }
+
+        .coin {
+            width: 20px;
+            height: 20px;
+            background: #ffff00;
+            position: absolute;
+            border-radius: 50%;
+            top: -20px;
+            box-shadow: 0 0 10px #ffff00;
+        }
+
+        #highScore {
+            color: #ff9900;
+            text-align: center;
+            font-size: 24px;
+            margin: 10px;
+            text-shadow: 0 0 10px #ff9900;
+        }
+
+        .speed-lines {
+            position: absolute;
+            width: 2px;
+            background: #333;
+            top: -100px;
+        }
+    </style>
+</head>
+<body>
+    <div id="score">Score: 0</div>
+    <div id="highScore">High Score: 0</div>
+    <div id="gameArea">
+        <div class="lane" style="left: 200px;"></div>
+        <div class="lane" style="left: 400px;"></div>
+        <div id="player"></div>
+        <div id="gameOver">
+            Game Over!<br>
+            Press R to restart
+        </div>
+    </div>
+
+    <script>
+        const player = document.getElementById('player');
+        const gameArea = document.getElementById('gameArea');
+        const scoreDisplay = document.getElementById('score');
+        const highScoreDisplay = document.getElementById('highScore');
+        const gameOverScreen = document.getElementById('gameOver');
+        
+        let currentLane = 1;
+        let score = 0;
+        let highScore = 0;
+        let isGameOver = false;
+        let gameSpeed = 5;
+        const lanes = [100, 280, 460];
+        
+        // Create speed lines
+        function createSpeedLines() {
+            for(let i = 0; i < 20; i++) {
+                const line = document.createElement('div');
+                line.className = 'speed-lines';
+                line.style.left = Math.random() * 600 + 'px';
+                line.style.height = Math.random() * 50 + 20 + 'px';
+                gameArea.appendChild(line);
+                
+                let pos = -100;
+                setInterval(() => {
+                    if (!isGameOver) {
+                        pos += gameSpeed * 2;
+                        line.style.top = pos + 'px';
+                        if (pos > 500) {
+                            pos = -100;
+                            line.style.left = Math.random() * 600 + 'px';
+                        }
+                    }
+                }, 20);
+            }
+        }
+        
+        // Move player
+        document.addEventListener('keydown', (e) => {
+            if (!isGameOver) {
+                if (e.key === 'ArrowLeft' && currentLane > 0) {
+                    currentLane--;
+                    player.style.left = lanes[currentLane] + 'px';
+                }
+                if (e.key === 'ArrowRight' && currentLane < 2) {
+                    currentLane++;
+                    player.style.left = lanes[currentLane] + 'px';
+                }
+            }
+            
+            if (e.key === 'r' && isGameOver) {
+                restartGame();
+            }
+        });
+        
+        function createObstacle() {
+            if (!isGameOver) {
+                const obstacle = document.createElement('div');
+                obstacle.className = 'obstacle';
+                const lane = Math.floor(Math.random() * 3);
+                obstacle.style.left = lanes[lane] + 'px';
+                gameArea.appendChild(obstacle);
+                
+                let pos = -40;
+                
+                const moveObstacle = setInterval(() => {
+                    if (isGameOver) {
+                        clearInterval(moveObstacle);
+                        return;
+                    }
+                    
+                    pos += gameSpeed;
+                    obstacle.style.top = pos + 'px';
+                    
+                    // Check collision
+                    if (pos >= 380 && pos <= 450 && lane === currentLane) {
+                        gameOver();
+                        clearInterval(moveObstacle);
+                    }
+                    
+                    if (pos > 500) {
+                        obstacle.remove();
+                        clearInterval(moveObstacle);
+                        score++;
+                        gameSpeed = Math.min(12, 5 + score/20);
+                        scoreDisplay.textContent = 'Score: ' + score;
+                    }
+                }, 16);
+            }
+        }
+
+        function createCoin() {
+            if (!isGameOver) {
+                const coin = document.createElement('div');
+                coin.className = 'coin';
+                const lane = Math.floor(Math.random() * 3);
+                coin.style.left = (lanes[lane] + 10) + 'px';
+                gameArea.appendChild(coin);
+                
+                let pos = -20;
+                
+                const moveCoin = setInterval(() => {
+                    if (isGameOver) {
+                        clearInterval(moveCoin);
+                        return;
+                    }
+                    
+                    pos += gameSpeed;
+                    coin.style.top = pos + 'px';
+                    
+                    // Check collection
+                    if (pos >= 380 && pos <= 450 && lane === currentLane) {
+                        coin.remove();
+                        clearInterval(moveCoin);
+                        score += 5;
+                        scoreDisplay.textContent = 'Score: ' + score;
+                    }
+                    
+                    if (pos > 500) {
+                        coin.remove();
+                        clearInterval(moveCoin);
+                    }
+                }, 16);
+            }
+        }
+        
+        function gameOver() {
+            isGameOver = true;
+            gameOverScreen.style.display = 'block';
+            if (score > highScore) {
+                highScore = score;
+                highScoreDisplay.textContent = 'High Score: ' + highScore;
+            }
+        }
+        
+        function restartGame() {
+            isGameOver = false;
+            score = 0;
+            gameSpeed = 5;
+            currentLane = 1;
+            scoreDisplay.textContent = 'Score: 0';
+            gameOverScreen.style.display = 'none';
+            player.style.left = lanes[currentLane] + 'px';
+            
+            // Remove all obstacles and coins
+            const obstacles = document.getElementsByClassName('obstacle');
+            while(obstacles.length > 0) {
+                obstacles[0].remove();
+            }
+            const coins = document.getElementsByClassName('coin');
+            while(coins.length > 0) {
+                coins[0].remove();
+            }
+        }
+        
+        // Initialize speed lines
+        createSpeedLines();
+        
+        // Spawn obstacles and coins
+        setInterval(createObstacle, 1000);
+        setInterval(createCoin, 2000);
+    </script>
+</body>
+</html>
