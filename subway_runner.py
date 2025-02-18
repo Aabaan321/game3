@@ -1,15 +1,15 @@
 import pygame
 import random
-import os
 import json
+from pathlib import Path
 
-# Initialize Pygame and mixer for sounds
+# Initialize Pygame
 pygame.init()
 pygame.mixer.init()
 
 # Game Constants
-WIDTH = 1024
-HEIGHT = 768
+WIDTH = 800
+HEIGHT = 600
 FPS = 60
 GRAVITY = 0.8
 LANE_WIDTH = WIDTH // 3
@@ -21,34 +21,19 @@ BLACK = (0, 0, 0)
 RED = (255, 0, 0)
 BLUE = (0, 0, 255)
 YELLOW = (255, 255, 0)
+GREEN = (0, 255, 0)
 
 # Set up display
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Subway Runner")
 clock = pygame.time.Clock()
 
-# Load high score
-def load_high_score():
-    try:
-        with open('high_score.json', 'r') as f:
-            return json.load(f)['high_score']
-    except:
-        return 0
-
-def save_high_score(score):
-    with open('high_score.json', 'w') as f:
-        json.dump({'high_score': score}, f)
-
-# Asset loading
-def load_image(name):
-    image = pygame.image.load(os.path.join('assets', name))
-    return pygame.transform.scale(image, (60, 80))
-
-# Sprite classes
 class Player(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
-        self.image = pygame.Surface((40, 60))
+        self.width = 40
+        self.height = 60
+        self.image = pygame.Surface((self.width, self.height))
         self.image.fill(BLUE)
         self.rect = self.image.get_rect()
         self.rect.centerx = LANES[1]
@@ -63,10 +48,9 @@ class Player(pygame.sprite.Sprite):
     def jump(self):
         if not self.jumping:
             self.jumping = True
-            self.velocity = -20
+            self.velocity = -15
             
     def update(self):
-        # Jumping physics
         if self.jumping:
             self.velocity += GRAVITY
             self.rect.y += self.velocity
@@ -76,7 +60,6 @@ class Player(pygame.sprite.Sprite):
                 self.jumping = False
                 self.velocity = 0
         
-        # Invincibility timer
         if self.invincible:
             self.invincible_timer -= 1
             if self.invincible_timer <= 0:
@@ -93,12 +76,12 @@ class Player(pygame.sprite.Sprite):
 class Obstacle(pygame.sprite.Sprite):
     def __init__(self, lane):
         super().__init__()
-        self.image = pygame.Surface((50, 50))
+        self.image = pygame.Surface((40, 40))
         self.image.fill(RED)
         self.rect = self.image.get_rect()
         self.rect.centerx = LANES[lane]
-        self.rect.y = -100
-        self.speed = random.randint(5, 10)
+        self.rect.y = -50
+        self.speed = random.randint(5, 8)
         
     def update(self):
         self.rect.y += self.speed
@@ -112,7 +95,22 @@ class Powerup(pygame.sprite.Sprite):
         self.image.fill(YELLOW)
         self.rect = self.image.get_rect()
         self.rect.centerx = LANES[lane]
-        self.rect.y = -100
+        self.rect.y = -50
+        self.speed = 5
+        
+    def update(self):
+        self.rect.y += self.speed
+        if self.rect.top > HEIGHT:
+            self.kill()
+
+class Coin(pygame.sprite.Sprite):
+    def __init__(self, lane):
+        super().__init__()
+        self.image = pygame.Surface((20, 20))
+        self.image.fill(GREEN)
+        self.rect = self.image.get_rect()
+        self.rect.centerx = LANES[lane]
+        self.rect.y = -30
         self.speed = 5
         
     def update(self):
@@ -122,27 +120,22 @@ class Powerup(pygame.sprite.Sprite):
 
 class Game:
     def __init__(self):
-        self.load_game_data()
+        self.high_score = 0
         self.reset_game()
-        
-    def load_game_data(self):
-        self.high_score = load_high_score()
-        
+
     def reset_game(self):
-        # Sprite groups
         self.all_sprites = pygame.sprite.Group()
         self.obstacles = pygame.sprite.Group()
         self.powerups = pygame.sprite.Group()
+        self.coins = pygame.sprite.Group()
         self.player = Player()
         self.all_sprites.add(self.player)
         
-        # Game state
         self.score = 0
+        self.coins_collected = 0
         self.game_over = False
         self.spawn_timer = 0
         self.spawn_interval = 60
-        self.difficulty_timer = 0
-        self.difficulty_interval = 1000
         
     def handle_events(self):
         for event in pygame.event.get():
@@ -164,25 +157,29 @@ class Game:
         if self.spawn_timer >= self.spawn_interval:
             self.spawn_timer = 0
             
-            # Spawn obstacle
             lane = random.randint(0, 2)
-            obstacle = Obstacle(lane)
-            self.all_sprites.add(obstacle)
-            self.obstacles.add(obstacle)
             
-            # Sometimes spawn powerup
-            if random.random() < 0.2:  # 20% chance
+            # Spawn obstacle
+            if random.random() < 0.7:  # 70% chance for obstacle
+                obstacle = Obstacle(lane)
+                self.all_sprites.add(obstacle)
+                self.obstacles.add(obstacle)
+            
+            # Spawn powerup
+            if random.random() < 0.1:  # 10% chance for powerup
                 powerup_lane = random.randint(0, 2)
-                if powerup_lane != lane:  # Don't spawn powerup in same lane as obstacle
+                if powerup_lane != lane:
                     powerup = Powerup(powerup_lane)
                     self.all_sprites.add(powerup)
                     self.powerups.add(powerup)
-    
-    def increase_difficulty(self):
-        self.difficulty_timer += 1
-        if self.difficulty_timer >= self.difficulty_interval:
-            self.difficulty_timer = 0
-            self.spawn_interval = max(20, self.spawn_interval - 5)
+            
+            # Spawn coin
+            if random.random() < 0.3:  # 30% chance for coin
+                coin_lane = random.randint(0, 2)
+                if coin_lane != lane:
+                    coin = Coin(coin_lane)
+                    self.all_sprites.add(coin)
+                    self.coins.add(coin)
     
     def check_collisions(self):
         if not self.player.invincible:
@@ -191,23 +188,31 @@ class Game:
                 self.game_over = True
                 if self.score > self.high_score:
                     self.high_score = self.score
-                    save_high_score(self.high_score)
         
         # Powerup collection
         powerup_hits = pygame.sprite.spritecollide(self.player, self.powerups, True)
         for powerup in powerup_hits:
             self.player.invincible = True
-            self.player.invincible_timer = 180  # 3 seconds at 60 FPS
-            self.player.image.fill(YELLOW)  # Visual feedback
+            self.player.invincible_timer = 180
+            self.player.image.fill(YELLOW)
             self.score += 50
+        
+        # Coin collection
+        coin_hits = pygame.sprite.spritecollide(self.player, self.coins, True)
+        for coin in coin_hits:
+            self.coins_collected += 1
+            self.score += 10
     
     def update(self):
         if not self.game_over:
             self.all_sprites.update()
             self.spawn_objects()
-            self.increase_difficulty()
             self.check_collisions()
             self.score += 1
+            
+            # Increase difficulty
+            if self.score % 1000 == 0:
+                self.spawn_interval = max(20, self.spawn_interval - 5)
     
     def draw(self):
         screen.fill(WHITE)
@@ -218,12 +223,15 @@ class Game:
         
         self.all_sprites.draw(screen)
         
-        # Draw score
+        # Draw UI
         font = pygame.font.Font(None, 36)
         score_text = font.render(f'Score: {self.score}', True, BLACK)
+        coins_text = font.render(f'Coins: {self.coins_collected}', True, BLACK)
         high_score_text = font.render(f'High Score: {self.high_score}', True, BLACK)
+        
         screen.blit(score_text, (10, 10))
-        screen.blit(high_score_text, (10, 50))
+        screen.blit(coins_text, (10, 50))
+        screen.blit(high_score_text, (10, 90))
         
         if self.game_over:
             font = pygame.font.Font(None, 74)
