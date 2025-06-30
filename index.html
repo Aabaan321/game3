@@ -3,24 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cyber Runner: Re-Engineered</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <title>Cyber Runner: Ultimate Edition</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
     
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        :root {
+            --primary-glow: #00fff2;
+            --danger-glow: #ff0055;
+            --warning-glow: #ffd700;
+            --dark-bg: #0d0c1d;
+            --mid-bg: #1a1a2e;
+            --text-color: #e0e1dd;
         }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             display: flex;
             align-items: center;
             justify-content: center;
             min-height: 100vh;
-            background-color: #0d0c1d;
+            background-color: var(--dark-bg);
             font-family: 'Orbitron', sans-serif;
-            color: #e0e1dd;
+            color: var(--text-color);
             overflow: hidden;
         }
 
@@ -28,73 +33,87 @@
             position: relative;
             width: 800px;
             height: 600px;
-            background: #1a1a2e;
+            background: var(--dark-bg);
             box-shadow: 0 0 50px rgba(0, 255, 255, 0.2);
-            border: 2px solid #30475e;
+            border: 2px solid var(--primary-glow);
             border-radius: 10px;
-            overflow: hidden; /* Added to contain child elements */
+            overflow: hidden;
         }
 
         #gameArea {
-            width: 100%;
-            height: 100%;
+            width: 100%; height: 100%;
             position: relative;
             overflow: hidden;
             perspective: 1000px;
         }
 
+        /* --- VISUALS & ATMOSPHERE --- */
+        #parallax-background {
+            position: absolute;
+            width: 100%; height: 100%;
+            top: 0; left: 0;
+            z-index: -1;
+        }
+
+        .parallax-layer {
+            position: absolute;
+            bottom: 0; left: 0;
+            width: 200%; height: 100%;
+            background-repeat: repeat-x;
+            background-position: 0 100%;
+            will-change: transform;
+        }
+
+        #layer-1 { background-image: url(https://www.transparenttextures.com/patterns/stardust.png); opacity: 0.3; animation: scroll 60s linear infinite; }
+        #layer-2 { background-image: url(https://s3-us-west-2.amazonaws.com/s.cdpn.io/111863/city-2.png); opacity: 0.5; animation: scroll 40s linear infinite; }
+        #layer-3 { background-image: url(https://s3-us-west-2.amazonaws.com/s.cdpn.io/111863/city-1.png); opacity: 0.8; animation: scroll 20s linear infinite; }
+
+        @keyframes scroll {
+            from { transform: translateX(0); }
+            to { transform: translateX(-50%); }
+        }
+
         .grid {
             position: absolute;
-            width: 120%;
-            height: 200%;
-            left: -10%;
-            top: -50%;
+            width: 120%; height: 200%;
+            left: -10%; top: -50%;
             background-image:
-                linear-gradient(to right, rgba(0, 255, 255, 0.1) 1px, transparent 1px),
-                linear-gradient(to bottom, rgba(0, 255, 255, 0.1) 1px, transparent 1px);
+                linear-gradient(to right, rgba(0, 255, 255, 0.15) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(0, 255, 255, 0.15) 1px, transparent 1px);
             background-size: 50px 50px;
             transform: rotateX(80deg);
-            animation: moveGrid 10s linear infinite;
+            animation: moveGrid 5s linear infinite;
+            z-index: 0;
         }
 
         @keyframes moveGrid {
-            0% {
-                transform: rotateX(80deg) translateY(0);
-            }
-            100% {
-                transform: rotateX(80deg) translateY(600px);
-            }
+            from { transform: rotateX(80deg) translateY(0); }
+            to { transform: rotateX(80deg) translateY(600px); }
+        }
+        
+        @keyframes screenShake {
+            0%, 100% { transform: translate(0, 0); }
+            10%, 30%, 50%, 70%, 90% { transform: translate(-5px, 0); }
+            20%, 40%, 60%, 80% { transform: translate(5px, 0); }
         }
 
-        .hud {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            right: 20px;
-            display: flex;
-            justify-content: space-between;
-            z-index: 100;
-            font-size: 24px;
-            text-shadow: 0 0 10px #00fff2, 0 0 20px #00fff2;
-        }
+        .shake { animation: screenShake 0.3s forwards; }
 
+        /* --- PLAYER --- */
         #player {
             position: absolute;
-            width: 50px;
-            height: 70px;
-            bottom: 50px;
-            left: 375px;
+            width: 50px; height: 70px;
+            bottom: 50px; left: 375px;
             z-index: 50;
             transition: left 0.1s ease-out;
         }
 
         .player-model {
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(45deg, #00fff2, #0051ff);
-            border: 2px solid #00fff2;
+            width: 100%; height: 100%;
+            background: linear-gradient(45deg, var(--primary-glow), #0051ff);
+            border: 2px solid var(--primary-glow);
             border-radius: 10px;
-            box-shadow: 0 0 15px #00fff2, inset 0 0 10px rgba(255, 255, 255, 0.5);
+            box-shadow: 0 0 15px var(--primary-glow), inset 0 0 10px rgba(255, 255, 255, 0.5);
             animation: hover 2s infinite ease-in-out;
         }
 
@@ -105,8 +124,9 @@
 
         .player-model.dashing {
             opacity: 0.5;
-            transform: scale(1.2);
-            animation: dash-fx 0.3s ease-out;
+            transform: scaleX(1.5) scaleY(0.8);
+            filter: brightness(2);
+            transition: all 0.1s ease-out;
         }
 
         @keyframes hover {
@@ -114,536 +134,603 @@
             50% { transform: translateY(-10px); }
         }
 
-        @keyframes dash-fx {
-            0% { transform: scale(1.5); filter: brightness(2); }
-            100% { transform: scale(1); filter: brightness(1); }
-        }
-
+        /* --- GAME OBJECTS --- */
         .obstacle, .coin, .power-up {
             position: absolute;
-            will-change: top;
+            will-change: top, left;
         }
-
-        .obstacle.block {
-            width: 60px;
-            height: 60px;
-            background: linear-gradient(45deg, #ff0055, #ff5555);
-            border: 2px solid #ff0055;
+        .obstacle {
+            width: 60px; height: 60px;
+            background: linear-gradient(45deg, var(--danger-glow), #ff5555);
+            border: 2px solid var(--danger-glow);
             border-radius: 8px;
-            box-shadow: 0 0 15px #ff0055;
+            box-shadow: 0 0 15px var(--danger-glow);
+            transform-style: preserve-3d;
             animation: spin 4s infinite linear;
         }
-
-        .obstacle.laser {
-            width: 100px;
-            height: 10px;
-            background: #ff0055;
-            box-shadow: 0 0 20px #ff0055;
-            animation: laser-pulse 1s infinite;
-        }
-
-        @keyframes spin {
-            from { transform: rotateY(0deg) rotateX(20deg); }
-            to { transform: rotateY(360deg) rotateX(20deg); }
-        }
-
-        @keyframes laser-pulse {
-            0%, 100% { filter: brightness(1); }
-            50% { filter: brightness(2); }
-        }
-
         .coin {
-            width: 30px;
-            height: 30px;
-            background: #ffd700;
+            width: 30px; height: 30px;
+            background: var(--warning-glow);
             border-radius: 50%;
-            box-shadow: 0 0 15px #ffd700;
+            box-shadow: 0 0 15px var(--warning-glow);
             animation: pulse 1s infinite ease-in-out;
         }
-
         .power-up {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background-size: cover;
-            box-shadow: 0 0 20px;
+            width: 40px; height: 40px;
+            border-radius: 8px;
             animation: power-pulse 1.5s infinite ease-in-out;
         }
+        .power-up.shield { background-color: #00ff87; box-shadow: 0 0 20px #00ff87; }
+        .power-up.glitch { background-color: #ff00ff; box-shadow: 0 0 20px #ff00ff; }
+        
+        @keyframes spin { from { transform: rotateY(0deg) rotateX(20deg); } to { transform: rotateY(360deg) rotateX(20deg); } }
+        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+        @keyframes power-pulse { 0%, 100% { transform: scale(1) rotate(0deg); } 50% { transform: scale(1.2) rotate(180deg); } }
 
-        .power-up[data-type="shield"] {
-            background-color: #00ff87;
-            box-shadow: 0 0 20px #00ff87;
-        }
-
-        .power-up[data-type="glitch"] {
-            background-color: #ff00ff;
-            box-shadow: 0 0 20px #ff00ff;
-        }
-
-        .power-up[data-type="surge"] {
-            background-color: #ffff00;
-            box-shadow: 0 0 20px #ffff00;
-        }
-
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-        }
-
-        @keyframes power-pulse {
-            0%, 100% { transform: scale(1) rotate(0deg); }
-            50% { transform: scale(1.2) rotate(180deg); }
-        }
-
-        #powerUp-container {
+        /* --- UI & SCREENS --- */
+        #ui-layer {
             position: absolute;
-            bottom: 20px;
-            left: 20px;
-            z-index: 100;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .powerup-indicator {
-            padding: 10px 15px;
-            background: rgba(0, 255, 255, 0.1);
-            border: 1px solid #00fff2;
-            border-radius: 5px;
-            text-shadow: 0 0 5px #00fff2;
-            opacity: 0;
-            transition: opacity 0.5s;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 1000;
+            pointer-events: none;
         }
 
         .screen {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(13, 12, 29, 0.9);
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(13, 12, 29, 0.95);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             text-align: center;
-            z-index: 1000;
+            pointer-events: all;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.5s, visibility 0.5s;
+        }
+
+        .screen.active {
+            opacity: 1;
+            visibility: visible;
         }
 
         .screen h1 {
             font-size: 72px;
+            font-weight: 900;
             letter-spacing: 5px;
-            color: #ff0055;
-            text-shadow: 0 0 20px #ff0055;
+            color: var(--primary-glow);
+            text-shadow: 0 0 20px var(--primary-glow);
             margin-bottom: 10px;
-        }
-        
-        #startScreen h1 {
-             color: #00fff2;
-             text-shadow: 0 0 20px #00fff2;
         }
 
         .screen .subtitle {
-            font-size: 24px;
-            color: #00fff2;
-            text-shadow: 0 0 10px #00fff2;
-            margin-bottom: 40px;
+            font-size: 24px; color: var(--text-color); margin-bottom: 40px;
         }
-
-        .screen .instructions {
-            margin-bottom: 40px;
-        }
-
-        .screen .instructions p {
-            font-size: 18px;
-            margin: 10px 0;
-        }
-
-        .screen .instructions span {
-            color: #00fff2;
-            padding: 5px 10px;
-            border: 1px solid #00fff2;
-            border-radius: 5px;
-            margin-right: 10px;
-        }
-
-        .screen button {
+        
+        .screen-button {
             font-family: 'Orbitron', sans-serif;
-            font-size: 24px;
-            padding: 15px 30px;
-            background: transparent;
-            border: 2px solid #00fff2;
-            color: #00fff2;
-            border-radius: 5px;
-            cursor: pointer;
-            text-shadow: 0 0 10px #00fff2;
+            font-size: 24px; padding: 15px 30px;
+            background: transparent; border: 2px solid var(--primary-glow);
+            color: var(--primary-glow); border-radius: 5px;
+            cursor: pointer; text-shadow: 0 0 10px var(--primary-glow);
             transition: background 0.3s, color 0.3s;
+            margin: 10px;
+        }
+        .screen-button:hover { background: var(--primary-glow); color: var(--dark-bg); }
+
+        /* HUD */
+        #hud {
+            position: absolute;
+            top: 20px; left: 20px; right: 20px;
+            display: flex; justify-content: space-between;
+            font-size: 20px; text-shadow: 0 0 10px var(--primary-glow);
+            opacity: 0; transition: opacity 0.5s;
+        }
+        #mission-display {
+            position: absolute;
+            bottom: 20px; left: 50%; transform: translateX(-50%);
+            background: rgba(0,0,0,0.3); padding: 10px 20px;
+            border-radius: 5px; border: 1px solid rgba(0, 255, 255, 0.3);
+            font-size: 16px; opacity: 0; transition: opacity 0.5s;
+        }
+        
+        /* Upgrade Screen */
+        #upgrade-shop h1 { color: var(--warning-glow); text-shadow: 0 0 20px var(--warning-glow); }
+        #upgrade-container { display: flex; flex-direction: column; gap: 15px; margin-top: 20px; }
+        .upgrade-item { display: flex; align-items: center; justify-content: space-between; width: 450px; }
+        .upgrade-item-info { text-align: left; }
+        .upgrade-item-info p { opacity: 0.7; }
+        .upgrade-button {
+            padding: 10px 15px; font-size: 16px;
+            border-color: var(--warning-glow); color: var(--warning-glow);
+        }
+        .upgrade-button:hover { background: var(--warning-glow); color: var(--dark-bg); }
+        .upgrade-button:disabled { border-color: #555; color: #555; cursor: not-allowed; }
+        .upgrade-button:disabled:hover { background: transparent; }
+
+        /* Game Over Screen */
+        #gameOverScreen h1 { color: var(--danger-glow); text-shadow: 0 0 20px var(--danger-glow); }
+        #final-stats { font-size: 24px; margin-bottom: 20px; }
+
+        #audio-toggle {
+            position: absolute;
+            top: 20px; right: 20px;
+            width: 40px; height: 40px;
+            background: transparent;
+            border: 2px solid var(--primary-glow);
+            border-radius: 5px;
+            color: var(--primary-glow);
+            font-size: 20px;
+            cursor: pointer;
+            pointer-events: all;
+            z-index: 1001;
         }
 
-        .screen button:hover {
-            background: #00fff2;
-            color: #0d0c1d;
-        }
-
-        #gameOverScreen p {
-            font-size: 28px;
-            margin-bottom: 30px;
-            color: #e0e1dd;
-        }
     </style>
-
 </head>
 <body>
     <div id="gameContainer">
-        <div class="hud">
-            <div id="score">SCORE: 0</div>
-            <div id="highScore">HIGH SCORE: 0</div>
-        </div>
-        <div id="powerUp-container"></div>
         <div id="gameArea">
+            <div id="parallax-background">
+                <div id="layer-1" class="parallax-layer"></div>
+                <div id="layer-2" class="parallax-layer"></div>
+                <div id="layer-3" class="parallax-layer"></div>
+            </div>
             <div class="grid"></div>
             <div id="player"></div>
         </div>
+
         <div id="ui-layer">
-            <div id="startScreen" class="screen">
-                <h1>CYBER RUNNER</h1>
-                <p class="subtitle">RE-ENGINEERED</p>
-                <div class="instructions">
-                    <p><span>&larr;</span> / <span>&rarr;</span> TO MOVE</p>
-                    <p><span>SPACE</span> TO DASH</p>
-                </div>
-                <button id="startButton">INITIATE RUN</button>
+            <div id="hud">
+                <div id="score">SCORE: 0</div>
+                <div id="shards">SHARDS: 0</div>
             </div>
-            <div id="gameOverScreen" class="screen" style="display: none;">
+            <div id="mission-display"></div>
+            <button id="audio-toggle">🔊</button>
+
+            <div id="mainMenu" class="screen active">
+                <h1>CYBER RUNNER</h1>
+                <p class="subtitle">ULTIMATE EDITION</p>
+                <div>
+                    <button id="startButton" class="screen-button">START RUN</button>
+                    <button id="upgradeButton" class="screen-button">HANGAR</button>
+                </div>
+                 <p style="position:absolute; bottom:20px; font-size:12px; opacity: 0.6;">&larr;&rarr; MOVE | SPACE TO DASH</p>
+            </div>
+
+            <div id="upgrade-shop" class="screen">
+                <h1>UPGRADE HANGAR</h1>
+                <p class="subtitle" id="shop-shards">DATA-SHARDS: 0</p>
+                <div id="upgrade-container"></div>
+                <button id="backToMenuButton" class="screen-button" style="margin-top: 20px;">BACK</button>
+            </div>
+
+            <div id="gameOverScreen" class="screen">
                 <h1>CONNECTION LOST</h1>
-                <p>FINAL SCORE: <span id="finalScore">0</span></p>
-                <button id="restartButton">RESTART</button>
+                <div id="final-stats">
+                    <p>FINAL SCORE: <span id="finalScore">0</span></p>
+                    <p>SHARDS COLLECTED: <span id="finalShards">0</span></p>
+                </div>
+                <div>
+                    <button id="restartButton" class="screen-button">RETRY</button>
+                    <button id="menuFromGameOverButton" class="screen-button">MAIN MENU</button>
+                </div>
             </div>
         </div>
     </div>
+    
+    <audio id="bg-music" loop>
+        <source src="https://assets.codepen.io/217233/synthwave-outrun.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="coin-sfx" src="https://assets.codepen.io/217233/coin.wav"></audio>
+    <audio id="dash-sfx" src="https://assets.codepen.io/217233/dash.wav"></audio>
+    <audio id="impact-sfx" src="https://assets.codepen.io/217233/impact.wav"></audio>
 
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const gameArea = document.getElementById('gameArea');
-            const playerElement = document.getElementById('player');
-            const scoreDisplay = document.getElementById('score');
-            const highScoreDisplay = document.getElementById('highScore');
-            const powerUpContainer = document.getElementById('powerUp-container');
-            const startScreen = document.getElementById('startScreen');
-            const gameOverScreen = document.getElementById('gameOverScreen');
-            const startButton = document.getElementById('startButton');
-            const restartButton = document.getElementById('restartButton');
-            const finalScoreDisplay = document.getElementById('finalScore');
+    document.addEventListener('DOMContentLoaded', () => {
 
-            let gameState = {
-                score: 0,
-                highScore: localStorage.getItem('cyberRunnerHighScore') || 0,
-                gameSpeed: 5,
-                isGameOver: true,
-                isPlaying: false,
-                lanes: [150, 400, 650],
-                currentLane: 1,
-                activePowerUps: new Map()
-            };
-
-            let gameObjects = [];
-            let keys = {};
-            let animationFrameId;
-
-            class Player {
-                constructor() {
-                    this.el = playerElement;
-                    this.el.innerHTML = '<div class="player-model"></div>';
-                    this.model = this.el.querySelector('.player-model');
-                    this.width = 50;
+        const DOMElements = {
+            gameContainer: document.getElementById('gameContainer'),
+            gameArea: document.getElementById('gameArea'),
+            player: document.getElementById('player'),
+            hud: document.getElementById('hud'),
+            score: document.getElementById('score'),
+            shards: document.getElementById('shards'),
+            missionDisplay: document.getElementById('mission-display'),
+            mainMenu: document.getElementById('mainMenu'),
+            upgradeShop: document.getElementById('upgrade-shop'),
+            gameOverScreen: document.getElementById('gameOverScreen'),
+            startButton: document.getElementById('startButton'),
+            upgradeButton: document.getElementById('upgradeButton'),
+            backToMenuButton: document.getElementById('backToMenuButton'),
+            restartButton: document.getElementById('restartButton'),
+            menuFromGameOverButton: document.getElementById('menuFromGameOverButton'),
+            finalScore: document.getElementById('finalScore'),
+            finalShards: document.getElementById('finalShards'),
+            shopShards: document.getElementById('shop-shards'),
+            upgradeContainer: document.getElementById('upgrade-container'),
+            audioToggle: document.getElementById('audio-toggle'),
+            bgMusic: document.getElementById('bg-music'),
+            coinSfx: document.getElementById('coin-sfx'),
+            dashSfx: document.getElementById('dash-sfx'),
+            impactSfx: document.getElementById('impact-sfx')
+        };
+        
+        class Player {
+            constructor() {
+                this.el = DOMElements.player;
+                this.el.innerHTML = '<div class="player-model"></div>';
+                this.model = this.el.querySelector('.player-model');
+                this.width = 50;
+                this.isDashing = false;
+                this.dashCooldown = 2000;
+                this.lastDash = -this.dashCooldown;
+                this.shieldDuration = 5000;
+            }
+            update() {
+                const dashCooldown = shopManager.getStat('dashCooldown');
+                if (gameManager.keys[' '] && Date.now() - this.lastDash > dashCooldown) this.dash();
+                if (gameManager.keys['ArrowLeft'] && gameManager.state.currentLane > 0) gameManager.state.currentLane--;
+                if (gameManager.keys['ArrowRight'] && gameManager.state.currentLane < gameManager.state.lanes.length - 1) gameManager.state.currentLane++;
+                
+                gameManager.keys['ArrowLeft'] = gameManager.keys['ArrowRight'] = false; // Prevent holding down
+                this.el.style.left = (gameManager.state.lanes[gameManager.state.currentLane] - this.width / 2) + 'px';
+            }
+            dash() {
+                this.isDashing = true;
+                this.lastDash = Date.now();
+                this.model.classList.add('dashing');
+                audioManager.play('dash');
+                setTimeout(() => {
                     this.isDashing = false;
-                    this.dashCooldown = 2000; // 2 seconds
-                    this.lastDash = -this.dashCooldown;
-                }
-
-                update() {
-                    if (keys['ArrowLeft'] && gameState.currentLane > 0) {
-                        gameState.currentLane--;
-                        keys['ArrowLeft'] = false;
-                    }
-                    if (keys['ArrowRight'] && gameState.currentLane < gameState.lanes.length - 1) {
-                        gameState.currentLane++;
-                        keys['ArrowRight'] = false;
-                    }
-
-                    if (keys[' '] && Date.now() - this.lastDash > this.dashCooldown) {
-                        this.dash();
-                        keys[' '] = false;
-                    }
-
-                    this.el.style.left = (gameState.lanes[gameState.currentLane] - this.width / 2) + 'px';
-                }
-
-                dash() {
-                    this.isDashing = true;
-                    this.lastDash = Date.now();
-                    this.model.classList.add('dashing');
-                    setTimeout(() => {
-                        this.isDashing = false;
-                        this.model.classList.remove('dashing');
-                    }, 300);
-                }
+                    this.model.classList.remove('dashing');
+                }, 300);
             }
+            activateShield() { this.model.classList.add('shield'); }
+            deactivateShield() { this.model.classList.remove('shield'); }
+        }
 
-            class GameObject {
-                constructor(type) {
-                    this.type = type;
-                    this.el = document.createElement('div');
-                    this.el.className = this.type;
-                    this.lane = Math.floor(Math.random() * gameState.lanes.length);
-                    this.y = -60;
-                    this.width = 60;
-                    this.height = 60;
-                    this.el.style.left = (gameState.lanes[this.lane] - this.width / 2) + 'px';
-                    gameArea.appendChild(this.el);
-                }
-
-                update() {
-                    let currentSpeed = gameState.gameSpeed;
-                    if (gameState.activePowerUps.has('glitch')) {
-                        currentSpeed *= 0.5;
-                    }
-                    this.y += currentSpeed;
-                    this.el.style.top = this.y + 'px';
-
-                    if (this.y > 600) {
-                        this.destroy();
-                        if (this.type === 'obstacle') {
-                            updateScore(1);
-                        }
-                    }
-                }
-
-                destroy() {
-                    if (this.el.parentElement) {
-                        this.el.remove();
-                    }
-                    gameObjects = gameObjects.filter(o => o !== this);
-                }
+        class GameObject {
+            constructor(className) {
+                this.el = document.createElement('div');
+                this.el.className = className;
+                this.lane = Math.floor(Math.random() * gameManager.state.lanes.length);
+                this.y = -60;
+                DOMElements.gameArea.appendChild(this.el);
             }
-
-            class Obstacle extends GameObject {
-                constructor(obstacleType) {
-                    super('obstacle');
-                    this.obstacleType = obstacleType;
-                    this.el.classList.add(this.obstacleType);
-
-                    if (this.obstacleType === 'laser') {
-                        this.width = 100;
-                        this.height = 10;
-                        this.el.style.left = (gameState.lanes[this.lane] - this.width / 2) + 'px';
-                    }
-                }
+            update() {
+                let speed = gameManager.state.gameSpeed * (gameManager.powerUps.has('glitch') ? 0.5 : 1);
+                this.y += speed;
+                this.el.style.top = this.y + 'px';
+                if (this.y > 600) this.destroy();
             }
-
-            class Coin extends GameObject {
-                constructor() {
-                    super('coin');
-                    this.width = 30;
-                    this.height = 30;
-                    this.el.style.left = (gameState.lanes[this.lane] - this.width / 2) + 'px';
-                }
+            destroy() {
+                this.el.remove();
+                gameManager.gameObjects = gameManager.gameObjects.filter(o => o !== this);
             }
+        }
 
-            class PowerUp extends GameObject {
-                constructor(powerUpType) {
-                    super('power-up');
-                    this.powerUpType = powerUpType;
-                    this.el.dataset.type = powerUpType;
-                    this.width = 40;
-                    this.height = 40;
-                    this.el.style.left = (gameState.lanes[this.lane] - this.width / 2) + 'px';
-                }
+        class Obstacle extends GameObject {
+            constructor() {
+                super('obstacle');
+                this.width = 60; this.height = 60;
+                this.el.style.left = (gameManager.state.lanes[this.lane] - this.width / 2) + 'px';
             }
-            
-            const player = new Player();
-
-            function init() {
-                highScoreDisplay.textContent = `HIGH SCORE: ${gameState.highScore}`;
-                startButton.addEventListener('click', startGame);
-                restartButton.addEventListener('click', startGame);
-                document.addEventListener('keydown', e => {
-                    if (['ArrowLeft', 'ArrowRight', ' '].includes(e.key)) {
-                        e.preventDefault();
-                    }
-                    keys[e.key] = true;
-                });
-                document.addEventListener('keyup', e => keys[e.key] = false);
-            }
-            
-            function startGame() {
-                if (animationFrameId) {
-                    cancelAnimationFrame(animationFrameId);
-                }
-
-                gameState.score = 0;
-                gameState.gameSpeed = 5;
-                gameState.isGameOver = false;
-                gameState.isPlaying = true;
-                gameState.currentLane = 1;
-                
-                // Clear any existing powerups and timeouts
-                gameState.activePowerUps.forEach(p => clearTimeout(p.timeoutId));
-                gameState.activePowerUps.clear();
-                
-                updateScore(0);
-                
-                gameObjects.forEach(o => o.destroy());
-                gameObjects = [];
-
-                startScreen.style.display = 'none';
-                gameOverScreen.style.display = 'none';
-                
-                powerUpContainer.innerHTML = '';
-                player.model.classList.remove('shield');
-
-                gameLoop();
-            }
-
-            function gameLoop() {
-                if (gameState.isGameOver) {
+            onCollision() {
+                if (player.isDashing) return;
+                if (gameManager.powerUps.has('shield')) {
+                    gameManager.deactivatePowerUp('shield');
+                    this.destroy();
                     return;
                 }
-                
-                player.update();
-                
-                let isSurgeActive = gameState.activePowerUps.has('surge');
-                
-                gameObjects.forEach(o => {
-                    o.update();
-                    if (isSurgeActive && o.type === 'coin') {
-                        const playerRect = player.el.getBoundingClientRect();
-                        const coinRect = o.el.getBoundingClientRect();
-                        const dx = (playerRect.left + playerRect.width/2) - (coinRect.left + coinRect.width/2);
-                        const dy = (playerRect.top + playerRect.height/2) - (coinRect.top + coinRect.height/2);
-                        const distance = Math.sqrt(dx*dx + dy*dy);
-                        if(distance < 200){ // Magnet range
-                            o.el.style.left = (parseFloat(o.el.style.left) - dx * 0.1) + 'px';
-                            o.el.style.top = (parseFloat(o.el.style.top) - dy * 0.1) + 'px';
-                        }
-                    }
+                audioManager.play('impact');
+                uiManager.screenShake();
+                gameManager.endGame();
+            }
+        }
+
+        class Coin extends GameObject {
+            constructor() {
+                super('coin');
+                this.width = 30; this.height = 30;
+                this.el.style.left = (gameManager.state.lanes[this.lane] - this.width / 2) + 'px';
+            }
+            onCollision() {
+                gameManager.state.shardsCollectedThisRun++;
+                missionManager.update('shards', 1);
+                uiManager.updateHUD();
+                audioManager.play('coin');
+                this.destroy();
+            }
+        }
+
+        class PowerUp extends GameObject {
+            constructor(type) {
+                super('power-up ' + type);
+                this.type = type;
+                this.width = 40; this.height = 40;
+                this.el.style.left = (gameManager.state.lanes[this.lane] - this.width / 2) + 'px';
+            }
+            onCollision() {
+                const duration = this.type === 'shield' ? shopManager.getStat('shieldDuration') : 5000;
+                gameManager.activatePowerUp(this.type, duration);
+                this.destroy();
+            }
+        }
+
+        const uiManager = {
+            init() {
+                DOMElements.startButton.onclick = () => gameManager.startGame();
+                DOMElements.upgradeButton.onclick = () => this.showScreen('upgrade-shop');
+                DOMElements.backToMenuButton.onclick = () => this.showScreen('mainMenu');
+                DOMElements.restartButton.onclick = () => gameManager.startGame();
+                DOMElements.menuFromGameOverButton.onclick = () => this.showScreen('mainMenu');
+                DOMElements.audioToggle.onclick = () => audioManager.toggleMute();
+            },
+            showScreen(screenId) {
+                document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+                const screen = document.getElementById(screenId);
+                if (screen) screen.classList.add('active');
+                if (screenId === 'upgrade-shop') shopManager.render();
+            },
+            updateHUD() {
+                DOMElements.score.textContent = `SCORE: ${gameManager.state.score}`;
+                DOMElements.shards.textContent = `SHARDS: ${gameManager.state.shardsCollectedThisRun}`;
+            },
+            updateMissionDisplay(text) {
+                DOMElements.missionDisplay.textContent = text;
+            },
+            toggleGameUI(show) {
+                const opacity = show ? '1' : '0';
+                DOMElements.hud.style.opacity = opacity;
+                DOMElements.missionDisplay.style.opacity = opacity;
+            },
+            screenShake() {
+                DOMElements.gameContainer.classList.add('shake');
+                setTimeout(() => DOMElements.gameContainer.classList.remove('shake'), 300);
+            }
+        };
+
+        const audioManager = {
+            isMuted: false,
+            init() { this.isMuted = localStorage.getItem('isMuted') === 'true'; this.updateButton(); },
+            play(sound) {
+                if (this.isMuted) return;
+                const sfx = DOMElements[sound + 'Sfx'];
+                if (sfx) { sfx.currentTime = 0; sfx.play(); }
+            },
+            toggleMusic(play) {
+                if (this.isMuted || !play) DOMElements.bgMusic.pause();
+                else DOMElements.bgMusic.play().catch(() => {}); // Autoplay might be blocked
+            },
+            toggleMute() {
+                this.isMuted = !this.isMuted;
+                localStorage.setItem('isMuted', this.isMuted);
+                this.updateButton();
+                this.toggleMusic(!this.isMuted && gameManager.state.isPlaying);
+            },
+            updateButton() { DOMElements.audioToggle.textContent = this.isMuted ? '🔇' : '🔊'; }
+        };
+
+        const shopManager = {
+            upgrades: {
+                shieldDuration: { name: 'Shield Duration', base: 5000, step: 1000, maxLevel: 5, cost: [50, 150, 300, 500] },
+                dashCooldown: { name: 'Dash Cooldown', base: 2000, step: -250, maxLevel: 5, cost: [75, 200, 400, 600] },
+            },
+            playerUpgrades: {},
+
+            init() {
+                const saved = JSON.parse(localStorage.getItem('playerUpgrades'));
+                this.playerUpgrades = saved || { shieldDuration: 0, dashCooldown: 0 };
+            },
+            getStat(stat) {
+                const upgrade = this.upgrades[stat];
+                const level = this.playerUpgrades[stat] || 0;
+                return upgrade.base + (upgrade.step * level);
+            },
+            purchase(stat) {
+                const upgrade = this.upgrades[stat];
+                const level = this.playerUpgrades[stat];
+                if (level >= upgrade.maxLevel -1) return;
+
+                const cost = upgrade.cost[level];
+                if (gameManager.state.totalShards >= cost) {
+                    gameManager.state.totalShards -= cost;
+                    this.playerUpgrades[stat]++;
+                    this.save();
+                    this.render();
+                }
+            },
+            render() {
+                DOMElements.shopShards.textContent = `DATA-SHARDS: ${gameManager.state.totalShards}`;
+                DOMElements.upgradeContainer.innerHTML = '';
+                for (const key in this.upgrades) {
+                    const upgrade = this.upgrades[key];
+                    const level = this.playerUpgrades[key] || 0;
+                    const isMaxed = level >= upgrade.maxLevel -1;
+                    const cost = isMaxed ? 'MAX' : upgrade.cost[level];
+
+                    const item = document.createElement('div');
+                    item.className = 'upgrade-item';
+                    item.innerHTML = `
+                        <div class="upgrade-item-info">
+                            <h3>${upgrade.name} (Lvl ${level + 1})</h3>
+                            <p>Next: ${isMaxed ? '---' : this.getStat(key) + upgrade.step}ms</p>
+                        </div>
+                        <button class="screen-button upgrade-button" data-stat="${key}" ${isMaxed || gameManager.state.totalShards < cost ? 'disabled' : ''}>
+                            ${cost} 💎
+                        </button>
+                    `;
+                    DOMElements.upgradeContainer.appendChild(item);
+                }
+                document.querySelectorAll('.upgrade-button').forEach(b => {
+                    if (!b.disabled) b.onclick = () => this.purchase(b.dataset.stat);
                 });
+            },
+            save() { localStorage.setItem('playerUpgrades', JSON.stringify(this.playerUpgrades)); }
+        };
 
-                checkCollisions();
-                
-                // Dynamic Spawning Logic
-                if (Math.random() < gameState.score / 5000 + 0.02) spawnObject('obstacle');
-                if (Math.random() < 0.015) spawnObject('coin');
-                if (Math.random() < 0.002) spawnObject('power-up');
+        const missionManager = {
+            missions: [
+                { id: 'shards', text: (v) => `Collect ${v} Data-Shards`, value: 50, reward: 50 },
+                { id: 'score', text: (v) => `Reach a score of ${v}`, value: 5000, reward: 75 },
+                { id: 'survival', text: (v) => `Survive for ${v} seconds`, value: 40, reward: 100 },
+                { id: 'dash', text: (v) => `Dash ${v} times`, value: 5, reward: 40}
+            ],
+            currentMission: null,
+            progress: 0,
 
-                gameState.gameSpeed = Math.min(15, 5 + gameState.score / 50);
-
-                animationFrameId = requestAnimationFrame(gameLoop);
-            }
-            
-            function spawnObject(type){
-                if (gameState.isGameOver) return;
-                
-                if (type === 'obstacle') {
-                    const obstacleType = Math.random() > 0.3 ? 'block' : 'laser';
-                    gameObjects.push(new Obstacle(obstacleType));
-                } else if (type === 'coin') {
-                    gameObjects.push(new Coin());
-                } else if (type === 'power-up') {
-                    const powerUpTypes = ['shield', 'glitch', 'surge'];
-                    const randomType = powerUpTypes[Math.floor(Math.random() * powerUpTypes.length)];
-                    gameObjects.push(new PowerUp(randomType));
+            startNew() {
+                this.currentMission = { ...this.missions[Math.floor(Math.random() * this.missions.length)] };
+                this.progress = 0;
+                this.updateDisplay();
+            },
+            update(type, value) {
+                if (!this.currentMission || this.currentMission.id !== type) return;
+                this.progress += value;
+                if (this.progress >= this.currentMission.value) {
+                    gameManager.state.totalShards += this.currentMission.reward;
+                    // TODO: show reward notification
+                    this.startNew();
                 }
+                this.updateDisplay();
+            },
+            updateDisplay() {
+                if (!this.currentMission) return;
+                uiManager.updateMissionDisplay(`${this.currentMission.text(this.currentMission.value)} (${Math.min(this.progress, this.currentMission.value)}/${this.currentMission.value})`);
             }
+        };
 
-            function checkCollisions() {
+        const gameManager = {
+            state: {},
+            keys: {},
+            gameObjects: [],
+            powerUps: new Map(),
+            lastFrameTime: 0,
+            
+            init() {
+                this.resetState();
+                this.state.totalShards = parseInt(localStorage.getItem('totalShards')) || 0;
+                this.state.highScore = parseInt(localStorage.getItem('highScore')) || 0;
+                
+                uiManager.init();
+                audioManager.init();
+                shopManager.init();
+                
+                document.addEventListener('keydown', e => this.keys[e.key] = true);
+                document.addEventListener('keyup', e => this.keys[e.key] = false);
+
+                uiManager.showScreen('mainMenu');
+            },
+            
+            resetState() {
+                this.state = {
+                    ...this.state,
+                    isPlaying: false,
+                    isGameOver: true,
+                    score: 0,
+                    gameSpeed: 6,
+                    lanes: [150, 400, 650],
+                    currentLane: 1,
+                    shardsCollectedThisRun: 0,
+                };
+            },
+
+            startGame() {
+                this.resetState();
+                this.state.isPlaying = true;
+                this.state.isGameOver = false;
+
+                this.gameObjects.forEach(o => o.destroy());
+                this.gameObjects = [];
+                this.powerUps.clear();
+                player.deactivateShield();
+                
+                missionManager.startNew();
+                uiManager.showScreen(''); // Hide all screens
+                uiManager.toggleGameUI(true);
+                audioManager.toggleMusic(true);
+                
+                this.lastFrameTime = performance.now();
+                this.gameLoop(this.lastFrameTime);
+            },
+
+            endGame() {
+                this.state.isPlaying = false;
+                this.state.isGameOver = true;
+                
+                this.state.totalShards += this.state.shardsCollectedThisRun;
+                if (this.state.score > this.state.highScore) this.state.highScore = this.state.score;
+                localStorage.setItem('totalShards', this.state.totalShards);
+                localStorage.setItem('highScore', this.state.highScore);
+
+                DOMElements.finalScore.textContent = this.state.score;
+                DOMElements.finalShards.textContent = this.state.shardsCollectedThisRun;
+
+                uiManager.showScreen('gameOverScreen');
+                uiManager.toggleGameUI(false);
+                audioManager.toggleMusic(false);
+            },
+            
+            gameLoop(timestamp) {
+                if (this.state.isGameOver) return;
+
+                const deltaTime = timestamp - this.lastFrameTime;
+                this.lastFrameTime = timestamp;
+
+                player.update();
+                this.gameObjects.forEach(o => o.update());
+                this.checkCollisions();
+                this.maybeSpawnObjects();
+                
+                this.state.score += Math.floor(deltaTime / 10);
+                this.state.gameSpeed = 6 + (this.state.score / 5000);
+                
+                missionManager.update('score', this.state.score);
+                missionManager.update('survival', deltaTime/1000);
+
+                uiManager.updateHUD();
+
+                requestAnimationFrame((t) => this.gameLoop(t));
+            },
+            
+            checkCollisions() {
                 const playerRect = player.el.getBoundingClientRect();
-                for (const obj of [...gameObjects]) { // Iterate over a copy
+                for (const obj of [...this.gameObjects]) {
                     const objRect = obj.el.getBoundingClientRect();
-                    if (playerRect.left < objRect.right &&
-                        playerRect.right > objRect.left &&
-                        playerRect.top < objRect.bottom &&
-                        playerRect.bottom > objRect.top) {
-                        
-                        handleCollision(obj);
+                    if (playerRect.left < objRect.right && playerRect.right > objRect.left &&
+                        playerRect.top < objRect.bottom && playerRect.bottom > objRect.top) {
+                        obj.onCollision();
                     }
                 }
-            }
+            },
             
-            function handleCollision(obj){
-                if (obj.type === 'obstacle') {
-                    if (player.isDashing) return;
-                    if (gameState.activePowerUps.has('shield')) {
-                        obj.destroy();
-                        deactivatePowerUp('shield');
-                        return;
-                    }
-                    gameOver();
-                } else if (obj.type === 'coin') {
-                    obj.destroy();
-                    updateScore(10);
-                } else if (obj.type === 'power-up') {
-                    obj.destroy();
-                    activatePowerUp(obj.powerUpType, 5000); // 5 second duration
-                }
-            }
+            maybeSpawnObjects() {
+                if (Math.random() < 0.02) this.gameObjects.push(new Obstacle());
+                if (Math.random() < 0.015) this.gameObjects.push(new Coin());
+                if (Math.random() < 0.003) this.gameObjects.push(new PowerUp(Math.random() > 0.5 ? 'shield' : 'glitch'));
+            },
+
+            activatePowerUp(type, duration) {
+                if (this.powerUps.has(type)) clearTimeout(this.powerUps.get(type));
+                if (type === 'shield') player.activateShield();
+                const timeout = setTimeout(() => this.deactivatePowerUp(type), duration);
+                this.powerUps.set(type, timeout);
+            },
             
-            function activatePowerUp(type, duration) {
-                if (gameState.activePowerUps.has(type)) {
-                    clearTimeout(gameState.activePowerUps.get(type).timeoutId);
-                    gameState.activePowerUps.get(type).indicator.remove();
-                }
-
-                const indicator = document.createElement('div');
-                indicator.className = 'powerup-indicator';
-                indicator.textContent = `${type.toUpperCase()} ACTIVE`;
-                indicator.id = `indicator-${type}`;
-                powerUpContainer.appendChild(indicator);
-                setTimeout(() => indicator.style.opacity = '1', 10);
-
-                const timeoutId = setTimeout(() => deactivatePowerUp(type), duration);
-                gameState.activePowerUps.set(type, { timeoutId, indicator });
-                
-                if (type === 'shield') {
-                    player.model.classList.add('shield');
-                }
+            deactivatePowerUp(type) {
+                if (type === 'shield') player.deactivateShield();
+                this.powerUps.delete(type);
             }
+        };
 
-            function deactivatePowerUp(type) {
-                if (!gameState.activePowerUps.has(type)) return;
+        const player = new Player();
+        gameManager.init();
 
-                const { indicator, timeoutId } = gameState.activePowerUps.get(type);
-                clearTimeout(timeoutId);
-                indicator.style.opacity = '0';
-                setTimeout(() => indicator.remove(), 500);
-                
-                gameState.activePowerUps.delete(type);
-
-                if (type === 'shield') {
-                    player.model.classList.remove('shield');
-                }
-            }
-
-            function updateScore(amount) {
-                gameState.score += amount;
-                scoreDisplay.textContent = `SCORE: ${gameState.score}`;
-                if (gameState.score > gameState.highScore) {
-                    gameState.highScore = gameState.score;
-                    highScoreDisplay.textContent = `HIGH SCORE: ${gameState.highScore}`;
-                    localStorage.setItem('cyberRunnerHighScore', gameState.highScore);
-                }
-            }
-
-            function gameOver() {
-                gameState.isGameOver = true;
-                gameState.isPlaying = false;
-                cancelAnimationFrame(animationFrameId);
-                finalScoreDisplay.textContent = gameState.score;
-                gameOverScreen.style.display = 'flex';
-            }
-
-            init();
-        });
+    });
     </script>
 </body>
 </html>
