@@ -3,8 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cyber Runner: Ultimate Edition</title>
+    <title>Cyber Runner: Camera Ops</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
     
     <style>
         :root {
@@ -40,6 +45,40 @@
             overflow: hidden;
         }
 
+        /* --- WEBCAM FEED PREVIEW --- */
+        #webcam-container {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            width: 160px;
+            height: 120px;
+            border: 2px solid var(--primary-glow);
+            border-radius: 8px;
+            overflow: hidden;
+            z-index: 2000;
+            background: #000;
+            opacity: 0.8;
+            transform: scaleX(-1); /* Mirror the preview naturally */
+        }
+        .input_video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        #loading-msg {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 12px;
+            color: var(--primary-glow);
+            display: none;
+            z-index: 2001;
+            text-align: center;
+            transform: scaleX(-1); /* Un-mirror text inside container */
+        }
+
+        /* --- GAME AREA --- */
         #gameArea {
             width: 100%; height: 100%;
             position: relative;
@@ -47,7 +86,6 @@
             perspective: 1000px;
         }
 
-        /* --- VISUALS & ATMOSPHERE --- */
         #parallax-background {
             position: absolute;
             width: 100%; height: 100%;
@@ -105,7 +143,7 @@
             width: 50px; height: 70px;
             bottom: 50px; left: 375px;
             z-index: 50;
-            transition: left 0.1s ease-out;
+            transition: left 0.2s ease-out; /* Smoother transition for hand tracking */
         }
 
         .player-model {
@@ -221,7 +259,6 @@
         }
         .screen-button:hover { background: var(--primary-glow); color: var(--dark-bg); }
 
-        /* HUD */
         #hud {
             position: absolute;
             top: 20px; left: 20px; right: 20px;
@@ -237,21 +274,13 @@
             font-size: 16px; opacity: 0; transition: opacity 0.5s;
         }
         
-        /* Upgrade Screen */
         #upgrade-shop h1 { color: var(--warning-glow); text-shadow: 0 0 20px var(--warning-glow); }
         #upgrade-container { display: flex; flex-direction: column; gap: 15px; margin-top: 20px; }
         .upgrade-item { display: flex; align-items: center; justify-content: space-between; width: 450px; }
-        .upgrade-item-info { text-align: left; }
-        .upgrade-item-info p { opacity: 0.7; }
-        .upgrade-button {
-            padding: 10px 15px; font-size: 16px;
-            border-color: var(--warning-glow); color: var(--warning-glow);
-        }
+        .upgrade-button { padding: 10px 15px; font-size: 16px; border-color: var(--warning-glow); color: var(--warning-glow); }
         .upgrade-button:hover { background: var(--warning-glow); color: var(--dark-bg); }
         .upgrade-button:disabled { border-color: #555; color: #555; cursor: not-allowed; }
-        .upgrade-button:disabled:hover { background: transparent; }
 
-        /* Game Over Screen */
         #gameOverScreen h1 { color: var(--danger-glow); text-shadow: 0 0 20px var(--danger-glow); }
         #final-stats { font-size: 24px; margin-bottom: 20px; }
 
@@ -268,11 +297,26 @@
             pointer-events: all;
             z-index: 1001;
         }
+        
+        .gesture-hint {
+            margin-top: 20px;
+            font-size: 14px;
+            color: var(--primary-glow);
+            opacity: 0.8;
+            border: 1px solid var(--primary-glow);
+            padding: 10px;
+            border-radius: 5px;
+        }
 
     </style>
 </head>
 <body>
     <div id="gameContainer">
+        <div id="webcam-container">
+            <video class="input_video" autoplay playsinline muted></video>
+            <div id="loading-msg">INITIALIZING NEURAL NET...</div>
+        </div>
+
         <div id="gameArea">
             <div id="parallax-background">
                 <div id="layer-1" class="parallax-layer"></div>
@@ -293,12 +337,15 @@
 
             <div id="mainMenu" class="screen active">
                 <h1>CYBER RUNNER</h1>
-                <p class="subtitle">ULTIMATE EDITION</p>
+                <p class="subtitle">NEURAL LINK EDITION</p>
                 <div>
-                    <button id="startButton" class="screen-button">START RUN</button>
+                    <button id="startButton" class="screen-button">CONNECT CAMERA</button>
                     <button id="upgradeButton" class="screen-button">HANGAR</button>
                 </div>
-                 <p style="position:absolute; bottom:20px; font-size:12px; opacity: 0.6;">&larr;&rarr; MOVE | SPACE TO DASH</p>
+                 <div class="gesture-hint">
+                     🖐 HAND POSITION = MOVE LEFT/RIGHT<br>
+                     ✊ MAKE FIST = DASH
+                 </div>
             </div>
 
             <div id="upgrade-shop" class="screen">
@@ -356,9 +403,71 @@
             bgMusic: document.getElementById('bg-music'),
             coinSfx: document.getElementById('coin-sfx'),
             dashSfx: document.getElementById('dash-sfx'),
-            impactSfx: document.getElementById('impact-sfx')
+            impactSfx: document.getElementById('impact-sfx'),
+            videoElement: document.querySelector('.input_video'),
+            loadingMsg: document.getElementById('loading-msg')
         };
         
+        // --- HAND TRACKING LOGIC ---
+        let handX = 0.5; // Normalized 0 to 1
+        let isPinching = false;
+        let cameraActive = false;
+        let handResults = null;
+
+        function onResults(results) {
+            DOMElements.loadingMsg.style.display = 'none';
+            if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+                handResults = results.multiHandLandmarks[0];
+                
+                // 1. Calculate X position (Use Wrist or Palm Center)
+                // Mirror the input: 1 - x because webcam is mirrored
+                let rawX = 1 - handResults[9].x; // 9 is Middle Finger MCP
+                
+                // Smoothing/Lerping to prevent jitter
+                handX = handX * 0.7 + rawX * 0.3;
+
+                // 2. Gesture Detection (Pinch/Fist)
+                // Calculate distance between Thumb Tip (4) and Index Tip (8)
+                const thumbTip = handResults[4];
+                const indexTip = handResults[8];
+                const distance = Math.sqrt(
+                    Math.pow(thumbTip.x - indexTip.x, 2) + 
+                    Math.pow(thumbTip.y - indexTip.y, 2)
+                );
+
+                // Threshold for "Fist/Pinch"
+                if (distance < 0.05 && !isPinching) {
+                    isPinching = true;
+                    if(gameManager.state.isPlaying) player.dash();
+                } else if (distance > 0.1) {
+                    isPinching = false;
+                }
+            }
+        }
+
+        const hands = new Hands({locateFile: (file) => {
+            return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
+        }});
+
+        hands.setOptions({
+            maxNumHands: 1,
+            modelComplexity: 1,
+            minDetectionConfidence: 0.5,
+            minTrackingConfidence: 0.5
+        });
+
+        hands.onResults(onResults);
+
+        const camera = new Camera(DOMElements.videoElement, {
+            onFrame: async () => {
+                await hands.send({image: DOMElements.videoElement});
+            },
+            width: 320,
+            height: 240
+        });
+
+        // --- GAME LOGIC ---
+
         class Player {
             constructor() {
                 this.el = DOMElements.player;
@@ -371,15 +480,25 @@
                 this.shieldDuration = 5000;
             }
             update() {
-                const dashCooldown = shopManager.getStat('dashCooldown');
-                if (gameManager.keys[' '] && Date.now() - this.lastDash > dashCooldown) this.dash();
-                if (gameManager.keys['ArrowLeft'] && gameManager.state.currentLane > 0) gameManager.state.currentLane--;
-                if (gameManager.keys['ArrowRight'] && gameManager.state.currentLane < gameManager.state.lanes.length - 1) gameManager.state.currentLane++;
+                // Hand Tracking Input mapping to Lanes
+                // 0.0 - 0.33: Left | 0.33 - 0.66: Center | 0.66 - 1.0: Right
                 
-                gameManager.keys['ArrowLeft'] = gameManager.keys['ArrowRight'] = false; // Prevent holding down
+                let targetLane = 1;
+                if (handX < 0.4) targetLane = 0;
+                else if (handX > 0.6) targetLane = 2;
+                else targetLane = 1;
+
+                // Only switch if we are strictly in the zone (Debounce happens via handX lerping)
+                gameManager.state.currentLane = targetLane;
+
+                const dashCooldown = shopManager.getStat('dashCooldown');
+                // Dash is triggered in onResults via camera now
+
                 this.el.style.left = (gameManager.state.lanes[gameManager.state.currentLane] - this.width / 2) + 'px';
             }
             dash() {
+                if (Date.now() - this.lastDash < shopManager.getStat('dashCooldown')) return;
+                
                 this.isDashing = true;
                 this.lastDash = Date.now();
                 this.model.classList.add('dashing');
@@ -463,7 +582,15 @@
 
         const uiManager = {
             init() {
-                DOMElements.startButton.onclick = () => gameManager.startGame();
+                DOMElements.startButton.onclick = async () => {
+                    if (!cameraActive) {
+                        DOMElements.startButton.textContent = "LOADING AI...";
+                        DOMElements.loadingMsg.style.display = 'block';
+                        await camera.start();
+                        cameraActive = true;
+                    }
+                    gameManager.startGame();
+                };
                 DOMElements.upgradeButton.onclick = () => this.showScreen('upgrade-shop');
                 DOMElements.backToMenuButton.onclick = () => this.showScreen('mainMenu');
                 DOMElements.restartButton.onclick = () => gameManager.startGame();
@@ -504,7 +631,7 @@
             },
             toggleMusic(play) {
                 if (this.isMuted || !play) DOMElements.bgMusic.pause();
-                else DOMElements.bgMusic.play().catch(() => {}); // Autoplay might be blocked
+                else DOMElements.bgMusic.play().catch(() => {});
             },
             toggleMute() {
                 this.isMuted = !this.isMuted;
@@ -593,20 +720,18 @@
                 this.progress += value;
                 if (this.progress >= this.currentMission.value) {
                     gameManager.state.totalShards += this.currentMission.reward;
-                    // TODO: show reward notification
                     this.startNew();
                 }
                 this.updateDisplay();
             },
             updateDisplay() {
                 if (!this.currentMission) return;
-                uiManager.updateMissionDisplay(`${this.currentMission.text(this.currentMission.value)} (${Math.min(this.progress, this.currentMission.value)}/${this.currentMission.value})`);
+                uiManager.updateMissionDisplay(`${this.currentMission.text(this.currentMission.value)} (${Math.min(Math.floor(this.progress), this.currentMission.value)}/${this.currentMission.value})`);
             }
         };
 
         const gameManager = {
             state: {},
-            keys: {},
             gameObjects: [],
             powerUps: new Map(),
             lastFrameTime: 0,
@@ -620,9 +745,6 @@
                 audioManager.init();
                 shopManager.init();
                 
-                document.addEventListener('keydown', e => this.keys[e.key] = true);
-                document.addEventListener('keyup', e => this.keys[e.key] = false);
-
                 uiManager.showScreen('mainMenu');
             },
             
@@ -650,7 +772,7 @@
                 player.deactivateShield();
                 
                 missionManager.startNew();
-                uiManager.showScreen(''); // Hide all screens
+                uiManager.showScreen('');
                 uiManager.toggleGameUI(true);
                 audioManager.toggleMusic(true);
                 
@@ -701,8 +823,12 @@
                 const playerRect = player.el.getBoundingClientRect();
                 for (const obj of [...this.gameObjects]) {
                     const objRect = obj.el.getBoundingClientRect();
-                    if (playerRect.left < objRect.right && playerRect.right > objRect.left &&
-                        playerRect.top < objRect.bottom && playerRect.bottom > objRect.top) {
+                    // Hitbox reduction for fairness
+                    const padding = 10;
+                    if (playerRect.left + padding < objRect.right - padding && 
+                        playerRect.right - padding > objRect.left + padding &&
+                        playerRect.top + padding < objRect.bottom - padding && 
+                        playerRect.bottom - padding > objRect.top + padding) {
                         obj.onCollision();
                     }
                 }
