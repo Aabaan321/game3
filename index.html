@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cyber Runner: Gesture Control</title>
-    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    <title>Cyber Runner: Fixed Gestures</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700;900&display=swap" rel="stylesheet">
     
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
@@ -12,473 +12,493 @@
     
     <style>
         :root {
-            --holo-blue: #00f0ff;
-            --holo-pink: #ff003c;
-            --holo-yellow: #fcee0a;
-            --glass-bg: rgba(0, 15, 30, 0.65);
-            --glass-border: rgba(0, 240, 255, 0.3);
+            --neon-blue: #00f3ff;
+            --neon-pink: #ff0055;
+            --neon-green: #00ff9d;
+            --bg-dark: #050510;
         }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            background-color: #050505;
+            margin: 0;
+            background: var(--bg-dark);
             font-family: 'Rajdhani', sans-serif;
+            color: white;
             overflow: hidden;
-            background-image: radial-gradient(circle at center, #1a1a1a 0%, #000 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
         }
 
-        /* --- CONTAINER & CANVAS --- */
-        #gameContainer {
+        #game-container {
             position: relative;
-            width: 900px;
-            height: 650px;
+            width: 100%;
+            max-width: 1000px;
+            aspect-ratio: 16/9;
             background: #000;
-            box-shadow: 0 0 40px rgba(0, 240, 255, 0.1);
-            border: 1px solid #333;
-            border-radius: 16px;
-            overflow: hidden;
-        }
-
-        #gameArea {
-            width: 100%; height: 100%;
-            position: relative;
-            overflow: hidden;
-            perspective: 800px;
-        }
-
-        /* --- WEBCAM HUD --- */
-        #webcam-wrapper {
-            position: absolute;
-            top: 20px; right: 20px;
-            width: 180px; height: 135px;
+            border: 2px solid #333;
             border-radius: 12px;
             overflow: hidden;
-            border: 2px solid var(--holo-blue);
-            box-shadow: 0 0 15px var(--holo-blue);
-            z-index: 2000;
-            background: #000;
-            transform: scaleX(-1);
+            box-shadow: 0 0 50px rgba(0, 243, 255, 0.1);
         }
-        .input_video { width: 100%; height: 100%; object-fit: cover; opacity: 0.8; }
-        
-        #gesture-feedback {
+
+        /* --- DEBUG & CAMERA LAYER --- */
+        #camera-feed {
             position: absolute;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%) scaleX(-1);
-            font-size: 40px;
-            font-weight: 900;
-            color: #fff;
-            text-shadow: 0 0 10px var(--holo-pink);
+            top: 20px;
+            right: 20px;
+            width: 160px;
+            height: 120px;
+            background: #111;
+            border: 1px solid var(--neon-blue);
+            z-index: 100;
+            transform: scaleX(-1); /* Mirror Mode */
+            opacity: 0.8;
+        }
+        
+        .debug-dot {
+            position: absolute;
+            width: 10px; height: 10px;
+            background: red;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 101;
             pointer-events: none;
-            z-index: 2001;
-            opacity: 0;
-            transition: opacity 0.2s;
         }
-
-        /* --- HOLOGRAPHIC UI --- */
-        .hud-panel {
-            position: absolute;
-            padding: 15px 25px;
-            background: var(--glass-bg);
-            backdrop-filter: blur(10px);
-            border: 1px solid var(--glass-border);
-            border-radius: 8px;
-            color: #fff;
-            z-index: 1000;
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-        }
-
-        #score-panel { top: 20px; left: 20px; text-align: left; }
-        #score-val { font-size: 32px; color: var(--holo-blue); font-weight: 700; display: block; }
-        #shards-val { font-size: 18px; color: var(--holo-yellow); letter-spacing: 1px; }
-
-        #status-panel { 
-            bottom: 20px; left: 20px; 
-            width: 200px;
-        }
-        .status-bar {
-            width: 100%; height: 6px; background: rgba(255,255,255,0.1);
-            margin-top: 5px; border-radius: 3px; overflow: hidden;
-        }
-        .fill { height: 100%; background: var(--holo-blue); width: 100%; transition: width 0.2s; }
-        .shield-active .fill { background: var(--holo-pink); box-shadow: 0 0 10px var(--holo-pink); }
-
-        /* --- MENUS --- */
-        .screen {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.85);
-            backdrop-filter: blur(5px);
-            display: flex; flex-direction: column;
-            align-items: center; justify-content: center;
-            opacity: 0; visibility: hidden; transition: 0.4s;
-            z-index: 3000;
-        }
-        .screen.active { opacity: 1; visibility: visible; }
         
-        h1 { font-size: 64px; color: white; text-transform: uppercase; letter-spacing: 8px; margin-bottom: 10px; }
-        h1 span { color: var(--holo-blue); }
-        
-        .btn {
-            background: rgba(0, 240, 255, 0.1);
-            border: 1px solid var(--holo-blue);
-            color: var(--holo-blue);
-            padding: 15px 40px;
-            font-family: 'Rajdhani';
-            font-size: 24px;
-            font-weight: 700;
-            margin: 10px;
-            cursor: pointer;
-            transition: 0.3s;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-        }
-        .btn:hover { background: var(--holo-blue); color: #000; box-shadow: 0 0 20px var(--holo-blue); }
-
-        .tutorial-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 20px;
-            margin-top: 30px;
-        }
-        .tut-card {
-            border: 1px solid #333;
-            padding: 20px;
-            background: rgba(255,255,255,0.05);
-            text-align: center;
-        }
-        .tut-icon { font-size: 30px; margin-bottom: 10px; display: block; }
-
-        /* --- GAME ELEMENTS --- */
-        .grid {
-            position: absolute; width: 200%; height: 200%;
-            left: -50%; top: -50%;
-            background-image: 
-                linear-gradient(rgba(0, 240, 255, 0.3) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0, 240, 255, 0.3) 1px, transparent 1px);
-            background-size: 80px 80px;
-            transform: rotateX(70deg);
-            animation: moveGrid 2s linear infinite;
-        }
-        @keyframes moveGrid { from { transform: rotateX(70deg) translateY(0); } to { transform: rotateX(70deg) translateY(80px); } }
-
-        #player {
-            position: absolute; width: 60px; height: 80px; bottom: 80px; left: 420px;
-            transform-style: preserve-3d; transition: left 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        #hand-state-text {
+            position: absolute;
+            top: 145px; right: 20px;
+            color: var(--neon-blue);
+            font-size: 14px;
+            font-weight: bold;
+            text-align: right;
             z-index: 100;
         }
+
+        /* --- GAME WORLD --- */
+        #world {
+            position: absolute;
+            inset: 0;
+            perspective: 600px;
+            overflow: hidden;
+        }
+
+        .floor-grid {
+            position: absolute;
+            width: 200%; height: 200%;
+            top: 50%; left: -50%;
+            background: 
+                linear-gradient(transparent 0%, var(--bg-dark) 100%),
+                linear-gradient(0deg, rgba(0, 243, 255, 0.2) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 243, 255, 0.2) 1px, transparent 1px);
+            background-size: 100% 100%, 40px 40px, 40px 40px;
+            transform: rotateX(60deg);
+            animation: moveGrid 1s linear infinite;
+        }
+
+        @keyframes moveGrid {
+            from { background-position: 0 0, 0 0, 0 0; }
+            to { background-position: 0 0, 0 40px, 0 40px; }
+        }
+
+        #player {
+            position: absolute;
+            bottom: 60px; left: 50%;
+            width: 60px; height: 80px;
+            transform: translateX(-50%);
+            transition: left 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+
         .player-body {
             width: 100%; height: 100%;
-            background: var(--holo-blue);
-            box-shadow: 0 0 20px var(--holo-blue);
-            clip-path: polygon(20% 0%, 80% 0%, 100% 20%, 100% 100%, 0% 100%, 0% 20%);
+            background: var(--neon-blue);
+            box-shadow: 0 0 20px var(--neon-blue);
+            clip-path: polygon(20% 0, 80% 0, 100% 100%, 0% 100%);
         }
-        .shield-effect {
-            position: absolute; top: -10px; left: -10px; right: -10px; bottom: -10px;
-            border: 2px solid var(--holo-pink); border-radius: 50%;
-            box-shadow: 0 0 15px var(--holo-pink);
-            opacity: 0; transition: 0.3s; transform: scale(0.8);
-        }
-        #player.shielded .shield-effect { opacity: 1; transform: scale(1); }
-        #player.jumping { animation: jumpAnim 0.6s ease-out; }
         
-        @keyframes jumpAnim {
-            0% { transform: translateY(0) scale(1); }
-            50% { transform: translateY(-150px) scale(1.2); }
-            100% { transform: translateY(0) scale(1); }
+        .shield-bubble {
+            position: absolute;
+            width: 140%; height: 140%;
+            top: -20%; left: -20%;
+            border: 2px solid var(--neon-pink);
+            border-radius: 50%;
+            box-shadow: 0 0 15px var(--neon-pink);
+            opacity: 0;
+            transform: scale(0.8);
+            transition: 0.2s;
+        }
+        
+        #player.shield-active .shield-bubble {
+            opacity: 1;
+            transform: scale(1);
+        }
+        
+        #player.jumping {
+            animation: jump 0.6s ease-out;
+        }
+
+        @keyframes jump {
+            0% { transform: translateX(-50%) translateY(0) scale(1); }
+            50% { transform: translateX(-50%) translateY(-150px) scale(1.2); }
+            100% { transform: translateX(-50%) translateY(0) scale(1); }
         }
 
         .obstacle {
-            position: absolute; width: 60px; height: 80px;
-            background: var(--holo-pink);
-            box-shadow: 0 0 15px var(--holo-pink);
-            clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+            position: absolute;
+            top: 0;
+            width: 50px; height: 50px;
+            background: var(--neon-pink);
+            box-shadow: 0 0 10px var(--neon-pink);
+            transform: translateX(-50%);
         }
-        .coin {
-            position: absolute; width: 30px; height: 30px;
-            background: var(--holo-yellow); border-radius: 50%;
-            box-shadow: 0 0 15px var(--holo-yellow);
+
+        /* --- UI --- */
+        .hud {
+            position: absolute;
+            padding: 20px;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            box-sizing: border-box;
+            z-index: 10;
         }
+        .score { font-size: 32px; font-weight: 900; }
+        .gesture-hint {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 48px;
+            font-weight: 900;
+            color: rgba(255,255,255,0.8);
+            text-shadow: 0 0 20px var(--neon-blue);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        #start-screen, #game-over {
+            position: absolute;
+            inset: 0;
+            background: rgba(0,0,0,0.9);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+        }
+        
+        button {
+            background: transparent;
+            border: 2px solid var(--neon-green);
+            color: var(--neon-green);
+            padding: 15px 40px;
+            font-size: 24px;
+            font-family: inherit;
+            cursor: pointer;
+            margin-top: 20px;
+            text-transform: uppercase;
+            transition: 0.2s;
+        }
+        button:hover { background: var(--neon-green); color: black; }
+        
+        .hidden { display: none !important; }
 
     </style>
 </head>
 <body>
 
-<div id="gameContainer">
-    <div id="webcam-wrapper">
-        <video class="input_video" autoplay playsinline muted></video>
-        <div id="gesture-feedback"></div>
-    </div>
+    <div id="game-container">
+        <video id="camera-feed" autoplay playsinline muted></video>
+        <div id="hand-state-text">WAITING FOR CAMERA...</div>
 
-    <div id="score-panel" class="hud-panel">
-        <span id="score-val">000000</span>
-        <span id="shards-val">SHARDS: 0</span>
-    </div>
-
-    <div id="status-panel" class="hud-panel">
-        <div style="display:flex; justify-content:space-between; font-size:12px;">
-            <span>SYSTEM INTEGRITY</span>
-            <span id="shield-txt">READY</span>
-        </div>
-        <div class="status-bar"><div class="fill" id="shield-bar"></div></div>
-    </div>
-
-    <div id="gameArea">
-        <div class="grid"></div>
-        <div id="player">
-            <div class="player-body"></div>
-            <div class="shield-effect"></div>
-        </div>
-    </div>
-
-    <div id="mainMenu" class="screen active">
-        <h1>NEON <span>RUNNER</span></h1>
-        <button id="btn-start" class="btn">INITIALIZE SYSTEM</button>
-        
-        <div class="tutorial-grid">
-            <div class="tut-card">
-                <span class="tut-icon">👋</span>
-                <p>SWIPE HAND</p>
-                <small style="color:#888">Change Lanes</small>
-            </div>
-            <div class="tut-card">
-                <span class="tut-icon">✊</span>
-                <p>HOLD FIST</p>
-                <small style="color:var(--holo-pink)">Activate Shield</small>
-            </div>
-            <div class="tut-card">
-                <span class="tut-icon">🖐 ✊ 🖐</span>
-                <p>GRAB AIR</p>
-                <small style="color:var(--holo-yellow)">Jump / Dash</small>
+        <div class="hud">
+            <div class="score">SCORE: <span id="score-val">0</span></div>
+            <div style="text-align:right">
+                <div>SHIELD: <span id="shield-status" style="color:#555">OFFLINE</span></div>
             </div>
         </div>
-    </div>
 
-    <div id="gameOver" class="screen">
-        <h1 style="color:var(--holo-pink)">CRITICAL FAILURE</h1>
-        <p style="color:white; font-size:24px; margin-bottom:20px;">SCORE: <span id="final-score">0</span></p>
-        <button onclick="location.reload()" class="btn">REBOOT SYSTEM</button>
-    </div>
-</div>
+        <div id="gesture-feedback" class="gesture-hint"></div>
 
-<audio id="sfx-swipe" src="https://assets.codepen.io/217233/dash.wav"></audio>
-<audio id="sfx-shield" src="https://assets.codepen.io/217233/impact.wav"></audio>
+        <div id="world">
+            <div class="floor-grid"></div>
+            <div id="player">
+                <div class="player-body"></div>
+                <div class="shield-bubble"></div>
+            </div>
+            </div>
+
+        <div id="start-screen">
+            <h1 style="font-size: 60px; margin:0;">CYBER RUNNER</h1>
+            <p style="color:#888;">GESTURE CALIBRATION</p>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px; text-align:left; margin:20px 0;">
+                <div>🖐 ➡ 🖐 <b>SWIPE</b></div><div>Move Lanes</div>
+                <div>🖐 ➡ ✊ ➡ 🖐 <b>TAP</b></div><div>Jump</div>
+                <div>✊ <b>HOLD FIST</b></div><div>Shield</div>
+            </div>
+            <button id="btn-start">ACTIVATE CAMERA</button>
+        </div>
+
+        <div id="game-over" class="hidden">
+            <h1 style="color:var(--neon-pink)">CRITICAL ERROR</h1>
+            <h3>SCORE: <span id="final-score">0</span></h3>
+            <button onclick="location.reload()">REBOOT SYSTEM</button>
+        </div>
+    </div>
 
 <script>
-    // --- CONFIG & STATE ---
-    const config = {
-        speed: 8,
-        lanes: [250, 420, 590], // Center X of lanes
-        swipeThreshold: 0.15, // How much hand needs to move to register swipe
-        fistThreshold: 10, // Distance of fingers to palm
-    };
-
-    const state = {
-        isPlaying: false,
-        lane: 1, // 0: Left, 1: Center, 2: Right
+    // --- GAME ENGINE ---
+    const GAME = {
+        active: false,
         score: 0,
-        shards: 0,
-        isShielding: false,
-        isJumping: false,
-        handXHistory: [], // For smoothing and swipe detection
-        lastSwipeTime: 0,
+        lane: 1, // 0=Left, 1=Mid, 2=Right
+        lanesX: ['20%', '50%', '80%'],
+        speed: 5,
+        obstacles: [],
+        lastTime: 0,
+        player: {
+            isJumping: false,
+            isShielding: false
+        }
+    };
+
+    // --- GESTURE ENGINE ---
+    const INPUT = {
+        handX: 0.5, // 0.0 to 1.0
         handState: 'open', // 'open' or 'closed'
-        handCloseStartTime: 0
+        stateChangeTime: 0,
+        lastSwipeX: 0.5,
+        canSwipe: true
     };
 
-    // --- DOM ELEMENTS ---
-    const dom = {
+    const ELS = {
         player: document.getElementById('player'),
-        gameArea: document.getElementById('gameArea'),
+        world: document.getElementById('world'),
         score: document.getElementById('score-val'),
-        shards: document.getElementById('shards-val'),
-        shieldBar: document.getElementById('shield-bar'),
-        shieldTxt: document.getElementById('shield-txt'),
-        gestureIcon: document.getElementById('gesture-feedback'),
-        mainMenu: document.getElementById('mainMenu'),
-        gameOver: document.getElementById('gameOver'),
-        finalScore: document.getElementById('final-score'),
-        video: document.querySelector('.input_video')
+        feedback: document.getElementById('gesture-feedback'),
+        shieldStatus: document.getElementById('shield-status'),
+        video: document.getElementById('camera-feed'),
+        debugText: document.getElementById('hand-state-text')
     };
 
-    // --- HAND TRACKING ENGINE ---
+    // 1. Initialize Camera & Hands
     const hands = new Hands({locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`});
-    hands.setOptions({ maxNumHands: 1, modelComplexity: 1, minDetectionConfidence: 0.7, minTrackingConfidence: 0.7 });
+    hands.setOptions({
+        maxNumHands: 1,
+        modelComplexity: 1,
+        minDetectionConfidence: 0.7, // High confidence to reduce jitter
+        minTrackingConfidence: 0.7
+    });
 
-    const camera = new Camera(dom.video, {
-        onFrame: async () => { await hands.send({image: dom.video}); },
+    hands.onResults(results => {
+        if (!results.multiHandLandmarks || results.multiHandLandmarks.length === 0) {
+            ELS.debugText.innerText = "NO HAND DETECTED";
+            return;
+        }
+
+        const lm = results.multiHandLandmarks[0];
+        
+        // --- 1. TRACKING HAND CENTER (Smoothed) ---
+        // Wrist (0) and Middle Finger Base (9)
+        const rawX = 1 - ((lm[0].x + lm[9].x) / 2); // 1-x to Mirror
+        INPUT.handX = (INPUT.handX * 0.6) + (rawX * 0.4); // Smooth it out
+
+        // --- 2. OPEN VS CLOSED DETECTION ---
+        // We check if fingertips are below finger pip joints
+        // Index(8), Middle(12), Ring(16), Pinky(20)
+        // vs PIP joints: 6, 10, 14, 18
+        // Actually, distance to palm (0) is more reliable for "Fist"
+        
+        let foldedFingers = 0;
+        [8, 12, 16, 20].forEach(tip => {
+            const distToWrist = Math.hypot(lm[tip].x - lm[0].x, lm[tip].y - lm[0].y);
+            // If tip is close to wrist (normalized coord approx < 0.15)
+            if (distToWrist < 0.25) foldedFingers++; 
+        });
+
+        const isClosed = foldedFingers >= 3; // 3 fingers folded = Fist
+        const now = Date.now();
+
+        // --- 3. STATE MACHINE ---
+        
+        if (isClosed && INPUT.handState === 'open') {
+            // Event: Hand Just Closed
+            INPUT.handState = 'closed';
+            INPUT.stateChangeTime = now;
+        } 
+        else if (!isClosed && INPUT.handState === 'closed') {
+            // Event: Hand Just Opened
+            const duration = now - INPUT.stateChangeTime;
+            INPUT.handState = 'open';
+            
+            // Logic: Short Press = Jump (Tap)
+            if (duration < 400) { // Less than 400ms
+                triggerJump();
+            }
+            // Logic: Release Shield
+            setShield(false);
+        }
+        else if (isClosed && INPUT.handState === 'closed') {
+            // Event: Holding Fist
+            const duration = now - INPUT.stateChangeTime;
+            if (duration > 400) { // Held for > 400ms
+                setShield(true);
+            }
+        }
+
+        // --- 4. SWIPE LOGIC (Positional Delta) ---
+        // Calculate difference from where the swipe "reset"
+        const delta = INPUT.handX - INPUT.lastSwipeX;
+        
+        if (Math.abs(delta) > 0.15 && INPUT.canSwipe) {
+            if (delta > 0) changeLane(1); // Right
+            else changeLane(-1); // Left
+            
+            INPUT.canSwipe = false; // Lock swiping
+            setTimeout(() => { 
+                INPUT.lastSwipeX = INPUT.handX; // Reset center to current hand pos
+                INPUT.canSwipe = true; 
+            }, 500); // 0.5s cooldown
+        }
+
+        // Debug UI
+        ELS.debugText.innerHTML = `
+            X: ${INPUT.handX.toFixed(2)}<br>
+            STATE: <span style="color:${isClosed ? 'red' : 'lime'}">${isClosed ? 'CLOSED' : 'OPEN'}</span>
+        `;
+        
+        // Draw Debug Dot
+        // We create/move a dot over the video feed
+        let dot = document.getElementById('debug-dot');
+        if(!dot) {
+            dot = document.createElement('div');
+            dot.id = 'debug-dot';
+            dot.className = 'debug-dot';
+            ELS.video.parentElement.appendChild(dot);
+        }
+        // Map normalized coords to video element size (160x120)
+        // Remember X is mirrored for logic but CSS left needs unmirrored if we used transform scaleX(-1) on video container
+        // Actually, just keep it simple:
+        dot.style.left = (rawX * 100) + '%';
+        dot.style.top = (lm[9].y * 100) + '%';
+        dot.style.background = isClosed ? 'red' : 'lime';
+    });
+
+    const camera = new Camera(ELS.video, {
+        onFrame: async () => { await hands.send({image: ELS.video}); },
         width: 320, height: 240
     });
 
-    hands.onResults(onResults);
+    // --- GAMEPLAY FUNCTIONS ---
 
-    function onResults(results) {
-        if (!results.multiHandLandmarks || results.multiHandLandmarks.length === 0) return;
-        
-        const landmarks = results.multiHandLandmarks[0];
-        processGestures(landmarks);
-    }
-
-    function processGestures(lm) {
-        const now = Date.now();
-        
-        // 1. CALCULATE HAND CENTER (X)
-        // Note: Camera is mirrored. Left on screen (0) is real Right.
-        // We use Wrist(0) and MiddleFingerMCP(9) average for stability
-        const handX = 1 - ((lm[0].x + lm[9].x) / 2); // 1 - x to un-mirror logic
-        
-        // 2. DETECT SWIPE (Change in X)
-        // Keep a short history to calculate velocity
-        state.handXHistory.push({x: handX, t: now});
-        if(state.handXHistory.length > 5) state.handXHistory.shift();
-        
-        if (now - state.lastSwipeTime > 400) { // Cooldown
-            const oldest = state.handXHistory[0];
-            const deltaX = handX - oldest.x;
-            
-            if (deltaX > config.swipeThreshold) moveLane(1); // Right
-            else if (deltaX < -config.swipeThreshold) moveLane(-1); // Left
-        }
-
-        // 3. DETECT FIST (Shield) vs GRAB (Jump)
-        // Check if fingertips are close to wrist/palm
-        // Tips: 8, 12, 16, 20. Wrist: 0.
-        let fingersFolded = 0;
-        [8, 12, 16, 20].forEach(tip => {
-            const d = Math.sqrt(Math.pow(lm[tip].x - lm[0].x, 2) + Math.pow(lm[tip].y - lm[0].y, 2));
-            if (d < 0.15) fingersFolded++; // Threshold for folded finger
-        });
-
-        const isCurrentlyClosed = fingersFolded >= 3; // 3 or 4 fingers folded = Fist
-
-        if (isCurrentlyClosed && state.handState === 'open') {
-            // Hand just closed
-            state.handState = 'closed';
-            state.handCloseStartTime = now;
-        } else if (!isCurrentlyClosed && state.handState === 'closed') {
-            // Hand just opened
-            state.handState = 'open';
-            const holdDuration = now - state.handCloseStartTime;
-            
-            // Short hold (< 400ms) = JUMP (Grab Action)
-            if (holdDuration < 400) {
-                performJump();
-            }
-            // Release shield if it was held
-            setShield(false);
-        } else if (isCurrentlyClosed && state.handState === 'closed') {
-            // Hand is holding closed
-            const holdDuration = now - state.handCloseStartTime;
-            if (holdDuration > 400) {
-                setShield(true); // Long hold = Shield
-            }
-        }
-    }
-
-    // --- GAMEPLAY ACTIONS ---
-    function moveLane(dir) {
-        if (!state.isPlaying) return;
-        
-        const newLane = state.lane + dir;
+    function changeLane(dir) {
+        if (!GAME.active) return;
+        const newLane = GAME.lane + dir;
         if (newLane >= 0 && newLane <= 2) {
-            state.lane = newLane;
-            state.lastSwipeTime = Date.now();
-            updatePlayerPos();
+            GAME.lane = newLane;
+            ELS.player.style.left = GAME.lanesX[GAME.lane];
             showFeedback(dir === 1 ? '➡' : '⬅');
-            document.getElementById('sfx-swipe').play();
         }
     }
 
-    function performJump() {
-        if (!state.isPlaying || state.isJumping) return;
-        state.isJumping = true;
-        dom.player.classList.add('jumping');
+    function triggerJump() {
+        if (!GAME.active || GAME.player.isJumping) return;
+        GAME.player.isJumping = true;
+        ELS.player.classList.add('jumping');
         showFeedback('⬆ JUMP');
         setTimeout(() => {
-            state.isJumping = false;
-            dom.player.classList.remove('jumping');
+            GAME.player.isJumping = false;
+            ELS.player.classList.remove('jumping');
         }, 600);
     }
 
     function setShield(active) {
-        if (state.isShielding === active) return;
-        state.isShielding = active;
-        
+        if (GAME.player.isShielding === active) return;
+        GAME.player.isShielding = active;
         if (active) {
-            dom.player.classList.add('shielded');
-            dom.statusPanel.classList.add('shield-active');
-            dom.shieldTxt.innerText = "ACTIVE";
-            dom.shieldTxt.style.color = "var(--holo-pink)";
+            ELS.player.classList.add('shield-active');
+            ELS.shieldStatus.innerText = "ACTIVE";
+            ELS.shieldStatus.style.color = "var(--neon-pink)";
             showFeedback('🛡 SHIELD');
         } else {
-            dom.player.classList.remove('shielded');
-            dom.statusPanel.classList.remove('shield-active');
-            dom.shieldTxt.innerText = "READY";
-            dom.shieldTxt.style.color = "white";
+            ELS.player.classList.remove('shield-active');
+            ELS.shieldStatus.innerText = "OFFLINE";
+            ELS.shieldStatus.style.color = "#555";
         }
     }
 
-    function showFeedback(text) {
-        dom.gestureIcon.innerText = text;
-        dom.gestureIcon.style.opacity = 1;
-        setTimeout(() => dom.gestureIcon.style.opacity = 0, 500);
-    }
-
-    function updatePlayerPos() {
-        dom.player.style.left = (config.lanes[state.lane] - 30) + 'px';
+    function showFeedback(txt) {
+        ELS.feedback.innerText = txt;
+        ELS.feedback.style.opacity = 1;
+        setTimeout(() => ELS.feedback.style.opacity = 0, 400);
     }
 
     // --- GAME LOOP ---
-    let gameLoopId;
-    let obstacles = [];
 
     function startGame() {
-        dom.mainMenu.classList.remove('active');
-        state.isPlaying = true;
-        state.score = 0;
-        obstacles = [];
-        // Clear existing
-        document.querySelectorAll('.obstacle').forEach(e => e.remove());
-        
-        gameLoopId = requestAnimationFrame(loop);
+        document.getElementById('start-screen').classList.add('hidden');
+        document.getElementById('game-over').classList.add('hidden');
+        GAME.active = true;
+        GAME.score = 0;
+        GAME.obstacles.forEach(o => o.el.remove());
+        GAME.obstacles = [];
+        GAME.lastTime = performance.now();
+        requestAnimationFrame(loop);
     }
 
-    function loop() {
-        if (!state.isPlaying) return;
+    function loop(time) {
+        if (!GAME.active) return;
+        
+        const delta = time - GAME.lastTime;
+        GAME.lastTime = time;
 
         // Spawn
         if (Math.random() < 0.02) spawnObstacle();
 
         // Update Obstacles
-        obstacles.forEach((obs, index) => {
-            obs.y += config.speed + (state.score / 1000); // Speed up over time
-            obs.el.style.top = obs.y + 'px';
-
-            // Collision
-            if (obs.y > 450 && obs.y < 550 && obs.lane === state.lane) {
-                if (state.isJumping) {
-                    // Dodged by jumping
-                } else if (state.isShielding) {
-                    // Blocked by shield - destroy obstacle
-                    obs.el.remove();
-                    obstacles.splice(index, 1);
-                    // document.getElementById('sfx-shield').play();
-                } else {
-                    gameOver();
-                }
-            }
-
-            // Cleanup
-            if (obs.y > 700) {
+        GAME.obstacles.forEach((obs, i) => {
+            obs.z += (0.2 + (GAME.score * 0.0001)) * delta; // Move towards screen
+            
+            // 3D Projection to 2D Top
+            // Simple perspective: As Z increases, Top increases, Scale increases
+            const progress = obs.z / 600; // 0 to 1
+            
+            if (progress >= 1) {
+                // Passed player
                 obs.el.remove();
-                obstacles.splice(index, 1);
-                state.score += 10;
-                dom.score.innerText = state.score.toString().padStart(6, '0');
+                GAME.obstacles.splice(i, 1);
+                GAME.score += 100;
+                ELS.score.innerText = GAME.score;
+            } else {
+                // Render
+                const laneX = GAME.lanesX[obs.lane]; 
+                // We fake 3D by lerping Top from 0% to 90%
+                obs.el.style.top = (progress * 90) + '%';
+                
+                // We need to actually set Left based on lane, but converge at horizon
+                // Horizon center is 50%. Lane is laneX.
+                // Lerp(50%, laneX, progress)
+                // We'll just stick to fixed lanes for simplicity in this CSS 3D setup
+                // But to make it look 3D:
+                // obs.el.style.left is complicated without matrix3d, let's keep it 2D-ish logic for lanes
+                // Actually, just set the lane.
+                obs.el.style.left = laneX;
+                obs.el.style.transform = `translateX(-50%) scale(${0.5 + progress})`;
+                
+                // Collision
+                // Player is at approx progress 0.8 to 0.9
+                if (progress > 0.8 && progress < 0.95 && obs.lane === GAME.lane) {
+                    if (GAME.player.isJumping) {
+                        // Safe
+                    } else if (GAME.player.isShielding) {
+                        // Destroy obstacle
+                        obs.el.remove();
+                        GAME.obstacles.splice(i, 1);
+                    } else {
+                        gameOver();
+                    }
+                }
             }
         });
 
@@ -489,24 +509,20 @@
         const lane = Math.floor(Math.random() * 3);
         const el = document.createElement('div');
         el.className = 'obstacle';
-        el.style.left = (config.lanes[lane] - 30) + 'px';
-        dom.gameArea.appendChild(el);
-        obstacles.push({ el: el, lane: lane, y: -100 });
+        el.style.left = GAME.lanesX[lane];
+        ELS.world.appendChild(el);
+        GAME.obstacles.push({ el, lane, z: 0 });
     }
 
     function gameOver() {
-        state.isPlaying = false;
-        cancelAnimationFrame(gameLoopId);
-        dom.gameOver.classList.add('active');
-        dom.finalScore.innerText = state.score;
+        GAME.active = false;
+        document.getElementById('final-score').innerText = GAME.score;
+        document.getElementById('game-over').classList.remove('hidden');
     }
 
-    // --- INIT ---
-    dom.scorePanel = document.getElementById('score-panel');
-    dom.statusPanel = document.getElementById('status-panel');
-
+    // Start Button
     document.getElementById('btn-start').addEventListener('click', async () => {
-        document.getElementById('btn-start').innerText = "CALIBRATING...";
+        document.getElementById('btn-start').innerText = "LOADING AI...";
         await camera.start();
         startGame();
     });
